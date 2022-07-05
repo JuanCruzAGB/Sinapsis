@@ -1,0 +1,41 @@
+@import url("./components.css");
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
+body {
+    min-height: 100vh;
+    background-color: var(--color-white);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: var(--color-black);
+}
+
+/* ? MD */
+@media (min-width: 768px) {
+    /*  */
+}
+
+/* ? LG */
+@media (min-width: 1024px) {
+    /*  */
+}
+
+/* ? XL */
+@media (min-width: 1200px) {
+    /*  */
+}
+
+/* ? 2XL */
+@media (min-width: 1536px) {
+    /*  */
+}
+
+/* ? 3XL */
+@media (min-width: 1920px) {
+    /*  */
+}
