@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ asset('css/user/list.css') }}">
 @endsection
 
-@section('tab-content-list')
+@section('content')
     <li id="users" class="tab-content opened">
         <section class="grid gap-4">
             <header class="content-title">
@@ -32,7 +32,7 @@
 
 @section('js')
     <script>
-        const properties = @json($properties);
+        const properties = [];
     </script>
 
     <script type="module" src="{{ asset('js/user/list.js') }}"></script>
