@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ asset('css/user/show.css') }}">
 @endsection
 
-@section('tab-content-list')
+@section('content')
     <li id="users" class="tab-content opened">
         <section class="grid gap-4">
             <header class="content-title">
