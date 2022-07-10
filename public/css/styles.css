@@ -11,7 +11,6 @@
 body {
     min-height: 100vh;
     background-color: var(--color-white);
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
     color: var(--color-black);
 }
 
