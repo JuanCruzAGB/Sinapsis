@@ -26,9 +26,10 @@
          */
         public function index (Request $request, string $role) {
             $users = $this->model::byRole($role)->get();
-
+            
             return view('user.list', [
                 'users' => $users,
+                'role' => $role,
             ]);
         }
 

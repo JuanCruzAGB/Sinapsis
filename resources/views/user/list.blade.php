@@ -29,13 +29,55 @@
                         </button>
                     </div> --}}
                 </section>
-                <section class="table col-lg-6 mx-2 mx-md-4 mx-lg-0 mb-4 pr-lg-0">
+                <section class="table table-wrapper col-lg-6 mx-2 mx-md-4 mx-lg-0 mb-4 pr-lg-0">
                     <table class="table">
-                        <tbody>
-                            <tr data-id_candidate="1">
-                                <td class="table-icon"><i class="far fa-user"></i></td>
-                                <td class="candidate_number">1</td><td class="full_name">Exam demo</td>
+                        @if ($role == "candidate")
+                        <thead>
+                            <tr>
+                              <th>Nombre inst.</th>
+                              <th>Referente</th>
+                              <th>Celular</th>
+                              <th>Email</th>
+                              <th>Dirección</th>
+                              <th>Afiliados</th>
                             </tr>
+                          </thead>
+                        <tbody>
+                       
+                        <tr data-id_candidate="1">                            
+                            <td class="table-icon">Santa rosa</td>
+                            <td class="candidate_number">Pepe</td>
+                            <td class="candidate_number">1159329312</td>
+                            <td class="candidate_number">nosoybatman@gmail.com</td>
+                            <td class="candidate_number">Calle falsa 123</td>
+                            <td class="candidate_number">Los drogueta</td>
+                            <td>w</td>
+                            <td>d</td>
+                        </tr>
+                        @endif 
+
+                        @if ($role == "associated")
+                        <thead>
+                            <tr>
+                              <th>N° de candidato</th>
+                              <th>Nombre completo</th>
+                              <th>Fecha de nacimiento</th>
+                              <th>País de residencia</th>
+                              <th>Nivel</th>
+                            </tr>
+                          </thead>
+                        <tbody>
+                        <tr data-id_candidate="1">
+                            <td class="candidate_number">1</td>
+                            <td class="candidate_number">Pepe Diaz</td>
+                            <td class="candidate_number">1/3/2016</td>
+                            <td class="candidate_number">Argentina</td>
+                            <td class="candidate_number">10</td>
+                            <td>w</td>
+                            <td>d</td>
+                        </tr>
+                        @endif 
+                           
                         </tbody>
                     </table>
                     <div class="filter-pagination">

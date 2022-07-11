@@ -1,4 +1,8 @@
 /* TABLA */
+.table-wrapper{
+    max-width: auto;
+    overflow-x: scroll;
+}
 
 .table{
     width: 100%;
@@ -11,7 +15,6 @@
     vertical-align: top;
     border-top: 1px solid #dee2e6;
 }
-
 
 tr.active, tr:hover {
     position: relative;
