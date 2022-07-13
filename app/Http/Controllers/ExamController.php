@@ -1,6 +1,7 @@
 <?php
     namespace App\Http\Controllers;
 
+    use Auth;
     use Illuminate\Http\Request;
 
     class ExamController extends Controller {
@@ -15,7 +16,7 @@
          * @return void
          */
         public function __construct () {
-            // $this->middleware('auth');
+            $this->middleware([ 'auth', ]);
         }
 
         /**
@@ -24,6 +25,10 @@
          * @return \Illuminate\Http\Response
          */
         public function index (Request $request) {
+            if (!isset(Auth::user()->role->actions['read']) || !in_array('exam', Auth::user()->role->actions['read'])) {
+                abort(403, 'You can not access here');
+            }
+
             $exams = $this->model::all();
 
             return view('exam.list', [
@@ -37,6 +42,10 @@
          * @return \Illuminate\Http\Response
          */
         public function create (Request $request) {
+            if (!isset(Auth::user()->role->actions['create']) || !in_array('exam', Auth::user()->role->actions['create'])) {
+                abort(403, 'You can not access here');
+            }
+
             return view('exam.create');
         }
 
@@ -46,6 +55,12 @@
          * @return \Illuminate\Http\Response
          */
         public function store (Request $request) {
+            if (!isset(Auth::user()->role->actions['create']) || !in_array('exam', Auth::user()->role->actions['create'])) {
+                abort(403, 'You can not access here');
+            }
+
+            ddd($request);
+
             return redirect()->route('exam.details');
         }
 
@@ -56,7 +71,11 @@
          * @return \Illuminate\Http\Response
          */
         public function show (Request $request, string $slug) {
-            $exam = $this->model::bySlug($id_exam);
+            if (!isset(Auth::user()->role->actions['update']) || !in_array('exam', Auth::user()->role->actions['update'])) {
+                abort(403, 'You can not access here');
+            }
+
+            $exam = $this->model::bySlug($slug);
 
             return view('exam.show', [
                 'exam' => $exam,
@@ -70,6 +89,12 @@
          * @return \Illuminate\Http\Response
          */
         public function update (Request $request, string $slug) {
+            if (!isset(Auth::user()->role->actions['update']) || !in_array('exam', Auth::user()->role->actions['update'])) {
+                abort(403, 'You can not access here');
+            }
+
+            ddd($request);
+
             return redirect()->route('exam.details');
         }
 
@@ -80,6 +105,12 @@
          * @return \Illuminate\Http\Response
          */
         public function destroy (Request $request, string $slug) {
+            if (!isset(Auth::user()->role->actions['delete']) || !in_array('exam', Auth::user()->role->actions['delete'])) {
+                abort(403, 'You can not access here');
+            }
+
+            ddd($request);
+
             return redirect()->route('exam.list');
         }
     }

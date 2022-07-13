@@ -4,17 +4,21 @@
 
 ### Fernando
 - [ ] Listado de Usuarios
-    Se tiene que poder listar todos los Usuarios creados, para las dos Categorías. (Adheridos y Candidatos)
-    Cada Categoría consta de distinta información que mostrar.
+    Se tiene que poder listar todos los Usuarios creados, para los tipos. (Admin, Corrector, Adherido, Candidato)
+    Cada tipo consta de distinta información que mostrar.
     Para los Adheridos tiene que tener dos botones "Enviar email" y "Enviar WhatsApp". (falta definir bien cómo y dónde)
 
-    URLS:
-    - /user/associated/list
-    - /user/candidate/list
+    Administradores:
+    * Nombre
+    * Correo
+
+    Correctores:
+    * Nombre
+    * Correo
 
     Adheridos:
-    * Nombre institución
-    * Referente
+    * Nombre
+    Referente (obligatorio solo para la Categoría Inbuilt)
     * Celular
     * Email
     * Dirección
@@ -32,9 +36,10 @@
     * País de residencia
         - Argentina
         - Uruguay
+        - Paraguay
         - Europa
         - Norte America
-    * Nivel (Falta definir que es exactamente, por ahora pone niveles del 1 al 10)
+    * Nivel (Los niveles que existen en Beyond)
 
 ### Juan Cruz
 - [ ] Organizar sitio
@@ -44,15 +49,20 @@
 
 ### Fernando
 - [ ] Crear Usuario
-    Cada Categoría consta de distinta información que crear.
+    Cada tipo consta de distinta información que crear.
 
-    URLS:
-    - /user/associated/create
-    - /user/candidate/create
+    Administradores:
+    * Nombre
+    * Correo
+    * Contraseña
+
+    Correctores:
+    * Correo
+    * Contraseña
 
     Adheridos:
-    * Nombre institución
-    * Referente
+    * Nombre
+    Referente (obligatorio solo para la Categoría Inbuilt)
     * Celular
     * Email
     * Dirección
@@ -80,15 +90,20 @@
     * Contraseña
 
 - [ ] Ver y Editar Usuario
-    Cada Categoría consta de distinta información que mostar/editar.
+    Cada tipo consta de distinta información que mostar/editar.
 
-    URLS:
-    - /user/associated/{slug}/show
-    - /user/candidate/{slug}/show
+    Administradores:
+    * Nombre
+    * Correo
+    * Contraseña
+
+    Correctores:
+    * Correo
+    * Contraseña
 
     Adheridos:
-    * Nombre institución
-    * Referente
+    * Nombre
+    Referente (obligatorio solo para la Categoría Inbuilt)
     * Celular
     * Email
     * Dirección
