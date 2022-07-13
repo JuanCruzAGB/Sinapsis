@@ -1,7 +1,7 @@
 @extends('layouts.panel')
 
 @section('title')
-    Something | Panel | {{ config('app.name') }}
+    Exams list | Panel | {{ config('app.name') }}
 @endsection
 
 @section('css')
@@ -32,7 +32,7 @@
 
 @section('js')
     <script>
-        const properties = @json($properties);
+        const exams = [];
     </script>
 
     <script type="module" src="{{ asset('js/exam/list.js') }}"></script>

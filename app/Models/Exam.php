@@ -21,6 +21,7 @@
          * @var array
          */
         protected $fillable = [
+            'id_created_by',
             'id_type',
             'name',
             'scheduled_at',
@@ -103,5 +104,15 @@
          */
         public function scopeBySlug ($query, string $slug) {
             return $query->where('slug', $slug)->first();
+        }
+
+        /**
+         * * Scope a query to only include Exams where match creator.
+         * @param \Illuminate\Database\Eloquent\Builder $query
+         * @param int $id_user
+         * @return \Illuminate\Database\Eloquent\Builder
+         */
+        public function scopeCreatedBy ($query, int $id_user) {
+            return $query->where('id_created_by', $id_user);
         }
     }

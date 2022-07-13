@@ -12,49 +12,58 @@
     |
     */
 
-    Auth::routes();
-
 // * Controller
-    Route::get('/', 'Controller@dashboard')->name('dashboard');
+    Route::get('/', 'Controller@dashboard')->name('index');
 
     Route::get('/dashboard', 'Controller@dashboard')->name('dashboard');
 
-// * UserController
-    Route::get('/user/{role}/list', 'UserController@index')->name('user.index');
+// * Auth
+    Auth::routes();
 
-    Route::get('/user/{role}/create', 'UserController@create')->name('user.create');
+    Route::get('/logout', 'Auth\LoginController@logout')->name('logout');
 
-    Route::post('/user/{role}/store', 'UserController@store')->name('user.store');
+// * CartController
+    Route::get('/cart', 'CartController@index')->name('cart.index');
 
-    Route::get('/user/{role}/{slug}/show', 'UserController@show')->name('user.show');
+    Route::put('/cart/update', 'CartController@update')->name('cart.update');
 
-    Route::put('/user/{role}/{slug}/update', 'UserController@update')->name('user.update');
+// * EvaluationController
+    Route::get('/evaluations/list', 'EvaluationController@index')->name('evaluation.index');
 
-    Route::delete('/user/{role}/{slug}/destroy', 'UserController@destroy')->name('user.destroy');
-
-    Route::get('/user/{slug}/details', 'UserController@details')->name('user.details');
+    Route::put('/evaluations/update', 'EvaluationController@update')->name('evaluation.update');
 
 // * ExamController
-    Route::get('/exam/list', 'ExamController@index')->name('exam.index');
+    Route::get('/exams/list', 'ExamController@index')->name('exam.index');
 
-    Route::get('/exam/create', 'ExamController@create')->name('exam.create');
+    Route::get('/exams/create', 'ExamController@create')->name('exam.create');
 
-    Route::post('/exam/store', 'ExamController@store')->name('exam.store');
+    Route::post('/exams/store', 'ExamController@store')->name('exam.store');
 
-    Route::get('/exam/{slug}/details', 'ExamController@show')->name('exam.details');
+    Route::middleware([ 'exam', ])->group(function () {
+        Route::get('/exams/{slug}/show', 'ExamController@show')->name('exam.show');
+    
+        Route::put('/exams/{slug}/update', 'ExamController@update')->name('exam.update');
+    
+        Route::delete('/exams/{slug}/destroy', 'ExamController@destroy')->name('exam.destroy');
+    });
 
-    Route::put('/exam/{slug}/update', 'ExamController@update')->name('exam.update');
+// * UserController
+    Route::middleware([ 'role', ])->group(function () {
+        Route::get('/users/{role}/list', 'UserController@index')->name('user.index');
 
-    Route::delete('/exam/{slug}/destroy', 'ExamController@destroy')->name('exam.destroy');
+        Route::get('/users/{role}/create', 'UserController@create')->name('user.create');
 
-    // Login
+        Route::post('/users/{role}/store', 'UserController@store')->name('user.store');
 
-    // Listado de Registros
+        Route::middleware([ 'user', ])->group(function () {
+            Route::get('/users/{role}/{slug}/show', 'UserController@show')->name('user.show');
 
-    // Listado de Resultados
+            Route::put('/users/{role}/{slug}/update', 'UserController@update')->name('user.update');
 
-    // Landing de Pago
+            Route::delete('/users/{role}/{slug}/destroy', 'UserController@destroy')->name('user.destroy');
+        });
+    });
 
-    // Landing de Correcciones
-
-    // Landing de Resultados
+    Route::middleware([ 'user', ])->group(function () {
+        Route::get('/users/{slug}/profile', 'UserController@details')->name('user.details');
+    });

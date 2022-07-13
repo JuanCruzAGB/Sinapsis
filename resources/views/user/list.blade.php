@@ -1,7 +1,7 @@
 @extends('layouts.panel')
 
 @section('title')
-    Something | Panel | {{ config('app.name') }}
+    {{ ucfirst($role) }} | Users list | Panel | {{ config('app.name') }}
 @endsection
 
 @section('css')
@@ -32,7 +32,7 @@
 
 @section('js')
     <script>
-        const properties = [];
+        const users = [];
     </script>
 
     <script type="module" src="{{ asset('js/user/list.js') }}"></script>

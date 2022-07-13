@@ -35,6 +35,7 @@
             'id_category',
             'id_certificate',
             'id_country',
+            'id_created_by',
             'id_level',
             'id_role',
             'last_name',
@@ -61,14 +62,6 @@
             'email_verified_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
-
-        /**
-         * * Get the User's full name.
-         * @return string
-         */
-        public function getFullNameAttribute () {
-            return $this->first_name . ' ' . $this->last_name;
-        }
 
         /**
          * * Get the User's Category.
@@ -114,35 +107,6 @@
         }
 
         /**
-         * * Get the User's Role.
-         * @return object
-         */
-        public function getRoleAttribute () {
-            switch ($this->id_role) {
-                case 0:
-                    return (object) [
-                        'id_role' => 0,
-                        'name' => 'Candidate',
-                        'slug' => 'candidate',
-                    ];
-
-                case 1:
-                    return (object) [
-                        'id_role' => 1,
-                        'name' => 'Associated',
-                        'slug' => 'associated',
-                    ];
-
-                case 2:
-                    return (object) [
-                        'id_role' => 2,
-                        'name' => 'Administrator',
-                        'slug' => 'administrator',
-                    ];
-            }
-        }
-
-        /**
          * * Get the User's Country.
          * @return object
          */
@@ -179,6 +143,120 @@
         }
 
         /**
+         * * Get the User's full name.
+         * @return string
+         */
+        public function getFullNameAttribute () {
+            return $this->first_name . ' ' . $this->last_name;
+        }
+
+        /**
+         * * Get the User's Role.
+         * @return object
+         */
+        public function getRoleAttribute () {
+            switch ($this->id_role) {
+                case 0:
+                    return (object) [
+                        'id_role' => 0,
+                        'name' => 'Candidate',
+                        'slug' => 'candidate',
+                        'actions' => [
+                            'pay',
+                        ],
+                    ];
+
+                case 1:
+                    return (object) [
+                        'id_role' => 1,
+                        'name' => 'Associated',
+                        'slug' => 'associated',
+                        'actions' => [
+                            'create' => [
+                                'candidate',
+                            ],
+                            'read' => [
+                                'candidate',
+                                'profile',
+                            ],
+                            'update' => [
+                                'candidate',
+                                'profile',
+                            ],
+                            'pay',
+                        ],
+                    ];
+
+                case 2:
+                    return (object) [
+                        'id_role' => 2,
+                        'name' => 'Corrector',
+                        'slug' => 'corrector',
+                        'actions' => [
+                            'grade',
+                        ],
+                    ];
+
+                case 3:
+                    return (object) [
+                        'id_role' => 2,
+                        'name' => 'Administrator',
+                        'slug' => 'administrator',
+                        'actions' => [
+                            'create' => [
+                                'administrator',
+                                'associated',
+                                'candidate',
+                                'corrector',
+                                'exam',
+                            ],
+                            'read' => [
+                                'administrator',
+                                'associated',
+                                'candidate',
+                                'corrector',
+                                'exam',
+                            ],
+                            'update' => [
+                                'administrator',
+                                'associated',
+                                'candidate',
+                                'corrector',
+                                'currency',
+                                'exam',
+                                'profile',
+                            ],
+                            'delete' => [
+                                'administrator',
+                                'associated',
+                                'candidate',
+                                'corrector',
+                                'exam',
+                            ],
+                            'grade',
+                            'pay',
+                        ],
+                    ];
+            }
+        }
+
+        /**
+         * * Get the creator that owns the User.
+         * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+         */
+        public function creator () {
+            return $this->belongsTo(User::class, 'id_created_by', 'id_user');
+        }
+
+        /**
+         * * Get all of the Users for the User.
+         * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+         */
+        public function users () {
+            return $this->hasMany(User::class, 'id_created_by', 'id_user');
+        }
+
+        /**
          * * Get all of the Evaluations for the User.
          * @return \Illuminate\Database\Eloquent\Relations\HasMany
          */
@@ -187,7 +265,7 @@
         }
 
         /**
-         * * Get all of the Exam for the Exam.
+         * * Get all of the Exam for the User.
          * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
          */
         public function exams () {
@@ -226,6 +304,10 @@
         public function scopeByRole ($query, string $role) {
             switch ($role) {
                 case 'administrator':
+                    $id_role = 3;
+                    break;
+
+                case 'corrector':
                     $id_role = 2;
                     break;
 
@@ -252,12 +334,22 @@
         }
 
         /**
+         * * Scope a query to only include Users where match id_role = 3.
+         * @param \Illuminate\Database\Eloquent\Builder $query
+         * @param int $id_role
+         * @return \Illuminate\Database\Eloquent\Builder
+         */
+        public function scopeAdministrators ($query) {
+            return $query->where('id_role', 3);
+        }
+
+        /**
          * * Scope a query to only include Users where match id_role = 2.
          * @param \Illuminate\Database\Eloquent\Builder $query
          * @param int $id_role
          * @return \Illuminate\Database\Eloquent\Builder
          */
-        public function scopeAdmins ($query) {
+        public function scopeCorrectors ($query) {
             return $query->where('id_role', 2);
         }
 
@@ -389,5 +481,15 @@
          */
         public function scopeEuropeans ($query) {
             return $query->where('id_country', 4);
+        }
+
+        /**
+         * * Scope a query to only include Users where match creator.
+         * @param \Illuminate\Database\Eloquent\Builder $query
+         * @param int $id_user
+         * @return \Illuminate\Database\Eloquent\Builder
+         */
+        public function scopeCreatedBy ($query, int $id_user) {
+            return $query->where('id_created_by', $id_user);
         }
     }
