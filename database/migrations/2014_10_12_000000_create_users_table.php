@@ -24,6 +24,7 @@
                 $table->string('cbu')->nullable();
                 $table->string('cuil')->nullable();
                 $table->unsignedInteger('id_role')->default(0);
+                $table->unsignedInteger('id_created_by')->nullable()->default(1);
                 $table->unsignedInteger('id_category')->nullable();
                 $table->unsignedInteger('id_country')->nullable();
                 $table->unsignedInteger('id_level')->nullable();

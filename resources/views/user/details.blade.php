@@ -1,7 +1,7 @@
 @extends('layouts.panel')
 
 @section('title')
-    {{ ucfirst($user->fullName) }} | Show | Panel | {{ config('app.name') }}
+    {{ ucfirst($user->fullName) }} | Profile | Panel | {{ config('app.name') }}
 @endsection
 
 @section('css')

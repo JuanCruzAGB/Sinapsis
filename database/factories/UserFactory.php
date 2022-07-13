@@ -20,19 +20,23 @@
 
     $factory->define(User::class, function (Faker $faker) {
         $name = $faker->firstName;
+        $id_role = $faker->randomElement([ 0, 1, 2, ]);
         $data = [
             'email' => $faker->unique()->safeEmail,
             'password' => Hash::make('password'),
             'first_name' => $name,
             'slug' => SlugService::createSlug(User::class, 'slug', $name),
-            'id_role' => $faker->randomElement([ 0, 1,]),
+            'id_created_by' => $id_role == 0
+                ? User::where('id_role', 1)->orwhere('id_role', 3)->get()->random()->id_user
+                : 1,
+            'id_role' => $id_role,
         ];
 
-        switch ($data['id_role']) {
+        switch ($id_role) {
             case 0:
                 $data['alias'] = $faker->words(3, true);
                 $data['birth_date'] = $faker->dateTime;
-                $data['candidate_number'] = $faker->randomNumber;
+                $data['candidate_number'] = $faker->unique()->randomNumber;
                 $data['cbu'] = $faker->randomNumber;
                 $data['cuil'] = $faker->randomNumber;
                 $data['id_certificate'] = $faker->randomElement([ 1, 2, ]);
@@ -43,7 +47,7 @@
 
             case 1:
                 $data['benchmark'] = $faker->name;
-                $data['direction'] = $faker->address;
+                $data['direction'] = $faker->streetAddress;
                 $data['id_category'] = $faker->randomElement([ 1, 2, 3, 4, 5, ]);
                 $data['phone'] = $faker->e164PhoneNumber;
                 break;
