@@ -31,7 +31,7 @@
                 </section>
                 <section class="table table-wrapper col-lg-6 mx-2 mx-md-4 mx-lg-0 mb-4 pr-lg-0">
                     <table class="table">
-                        @if ($role == "candidate")
+                        @if ($role == "associated")
                         <thead>
                             <tr>
                               <th>Nombre inst.</th>
@@ -46,17 +46,17 @@
                        
                         <tr data-id_candidate="1">                            
                             <td class="table-icon">Santa rosa</td>
-                            <td class="candidate_number">Pepe</td>
-                            <td class="candidate_number">1159329312</td>
-                            <td class="candidate_number">nosoybatman@gmail.com</td>
-                            <td class="candidate_number">Calle falsa 123</td>
-                            <td class="candidate_number">Los drogueta</td>
-                            <td>w</td>
-                            <td>d</td>
+                            <td>Pepe</td>
+                            <td>1159329312</td>
+                            <td>nosoybatman@gmail.com</td>
+                            <td>Calle falsa 123</td>
+                            <td>Los drogueta</td>
+                            <td>wasa</td>
+                            <td>correo</td>
                         </tr>
                         @endif 
 
-                        @if ($role == "associated")
+                        @if ($role == "candidate")
                         <thead>
                             <tr>
                               <th>N° de candidato</th>
@@ -68,13 +68,13 @@
                           </thead>
                         <tbody>
                         <tr data-id_candidate="1">
-                            <td class="candidate_number">1</td>
-                            <td class="candidate_number">Pepe Diaz</td>
-                            <td class="candidate_number">1/3/2016</td>
-                            <td class="candidate_number">Argentina</td>
-                            <td class="candidate_number">10</td>
-                            <td>w</td>
-                            <td>d</td>
+                            <td>1</td>
+                            <td>Pepe Diaz</td>
+                            <td>1/3/2016</td>
+                            <td>Argentina</td>
+                            <td>10</td>
+                            <td>wasa</td>
+                            <td>correo</td>
                         </tr>
                         @endif 
                            
