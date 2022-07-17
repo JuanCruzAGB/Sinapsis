@@ -1,4 +1,8 @@
-
+.tab-menu .tab-content-list .list .tab-content .content-title h2{
+    color: #014969;
+    font-family: var(--font-one) !important;
+    font-size: 1.8rem;
+}
 
 /* ? MD */
 @media (min-width: 768px) {

@@ -1950,7 +1950,7 @@ var staticRenderFns = [function () {
     staticClass: "card-header"
   }, [_vm._v("Example Component")]), _vm._v(" "), _c("div", {
     staticClass: "card-body"
-  }, [_vm._v("\r\n                        I'm an example component.\r\n                    ")])])])])]);
+  }, [_vm._v("\n                    I'm an example component.\n                ")])])])])]);
 }];
 render._withStripped = true;
 
@@ -37647,7 +37647,7 @@ function normalizeComponent(
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global, setImmediate) {/*!
- * Vue.js v2.7.1
+ * Vue.js v2.7.7
  * (c) 2014-2022 Evan You
  * Released under the MIT License.
  */
@@ -37984,7 +37984,9 @@ const LIFECYCLE_HOOKS = [
     'activated',
     'deactivated',
     'errorCaptured',
-    'serverPrefetch'
+    'serverPrefetch',
+    'renderTracked',
+    'renderTriggered'
 ];
 
 var config = {
@@ -38210,148 +38212,6 @@ function setCurrentInstance(vm = null) {
     vm && vm._scope.on();
 }
 
-let warn$2 = noop;
-let tip = noop;
-let generateComponentTrace; // work around flow check
-let formatComponentName;
-{
-    const hasConsole = typeof console !== 'undefined';
-    const classifyRE = /(?:^|[-_])(\w)/g;
-    const classify = str => str.replace(classifyRE, c => c.toUpperCase()).replace(/[-_]/g, '');
-    warn$2 = (msg, vm = currentInstance) => {
-        const trace = vm ? generateComponentTrace(vm) : '';
-        if (config.warnHandler) {
-            config.warnHandler.call(null, msg, vm, trace);
-        }
-        else if (hasConsole && !config.silent) {
-            console.error(`[Vue warn]: ${msg}${trace}`);
-        }
-    };
-    tip = (msg, vm) => {
-        if (hasConsole && !config.silent) {
-            console.warn(`[Vue tip]: ${msg}` + (vm ? generateComponentTrace(vm) : ''));
-        }
-    };
-    formatComponentName = (vm, includeFile) => {
-        if (vm.$root === vm) {
-            return '<Root>';
-        }
-        const options = isFunction(vm) && vm.cid != null
-            ? vm.options
-            : vm._isVue
-                ? vm.$options || vm.constructor.options
-                : vm;
-        let name = options.name || options._componentTag;
-        const file = options.__file;
-        if (!name && file) {
-            const match = file.match(/([^/\\]+)\.vue$/);
-            name = match && match[1];
-        }
-        return ((name ? `<${classify(name)}>` : `<Anonymous>`) +
-            (file && includeFile !== false ? ` at ${file}` : ''));
-    };
-    const repeat = (str, n) => {
-        let res = '';
-        while (n) {
-            if (n % 2 === 1)
-                res += str;
-            if (n > 1)
-                str += str;
-            n >>= 1;
-        }
-        return res;
-    };
-    generateComponentTrace = (vm) => {
-        if (vm._isVue && vm.$parent) {
-            const tree = [];
-            let currentRecursiveSequence = 0;
-            while (vm) {
-                if (tree.length > 0) {
-                    const last = tree[tree.length - 1];
-                    if (last.constructor === vm.constructor) {
-                        currentRecursiveSequence++;
-                        vm = vm.$parent;
-                        continue;
-                    }
-                    else if (currentRecursiveSequence > 0) {
-                        tree[tree.length - 1] = [last, currentRecursiveSequence];
-                        currentRecursiveSequence = 0;
-                    }
-                }
-                tree.push(vm);
-                vm = vm.$parent;
-            }
-            return ('\n\nfound in\n\n' +
-                tree
-                    .map((vm, i) => `${i === 0 ? '---> ' : repeat(' ', 5 + i * 2)}${isArray(vm)
-                    ? `${formatComponentName(vm[0])}... (${vm[1]} recursive calls)`
-                    : formatComponentName(vm)}`)
-                    .join('\n'));
-        }
-        else {
-            return `\n\n(found in ${formatComponentName(vm)})`;
-        }
-    };
-}
-
-let uid$2 = 0;
-/**
- * A dep is an observable that can have multiple
- * directives subscribing to it.
- * @internal
- */
-class Dep {
-    constructor() {
-        this.id = uid$2++;
-        this.subs = [];
-    }
-    addSub(sub) {
-        this.subs.push(sub);
-    }
-    removeSub(sub) {
-        remove$2(this.subs, sub);
-    }
-    depend(info) {
-        if (Dep.target) {
-            Dep.target.addDep(this);
-            if (info && Dep.target.onTrack) {
-                Dep.target.onTrack(Object.assign({ effect: Dep.target }, info));
-            }
-        }
-    }
-    notify(info) {
-        // stabilize the subscriber list first
-        const subs = this.subs.slice();
-        if (!config.async) {
-            // subs aren't sorted in scheduler if not running async
-            // we need to sort them now to make sure they fire in correct
-            // order
-            subs.sort((a, b) => a.id - b.id);
-        }
-        for (let i = 0, l = subs.length; i < l; i++) {
-            if (info) {
-                const sub = subs[i];
-                sub.onTrigger &&
-                    sub.onTrigger(Object.assign({ effect: subs[i] }, info));
-            }
-            subs[i].update();
-        }
-    }
-}
-// The current target watcher being evaluated.
-// This is globally unique because only one watcher
-// can be evaluated at a time.
-Dep.target = null;
-const targetStack = [];
-function pushTarget(target) {
-    targetStack.push(target);
-    Dep.target = target;
-}
-function popTarget() {
-    targetStack.pop();
-    Dep.target = targetStack[targetStack.length - 1];
-}
-
 /**
  * @internal
  */
@@ -38418,6 +38278,141 @@ function cloneVNode(vnode) {
     return cloned;
 }
 
+/* not type checking this file because flow doesn't play well with Proxy */
+let initProxy;
+{
+    const allowedGlobals = makeMap('Infinity,undefined,NaN,isFinite,isNaN,' +
+        'parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,' +
+        'Math,Number,Date,Array,Object,Boolean,String,RegExp,Map,Set,JSON,Intl,BigInt,' +
+        'require' // for Webpack/Browserify
+    );
+    const warnNonPresent = (target, key) => {
+        warn$2(`Property or method "${key}" is not defined on the instance but ` +
+            'referenced during render. Make sure that this property is reactive, ' +
+            'either in the data option, or for class-based components, by ' +
+            'initializing the property. ' +
+            'See: https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties.', target);
+    };
+    const warnReservedPrefix = (target, key) => {
+        warn$2(`Property "${key}" must be accessed with "$data.${key}" because ` +
+            'properties starting with "$" or "_" are not proxied in the Vue instance to ' +
+            'prevent conflicts with Vue internals. ' +
+            'See: https://vuejs.org/v2/api/#data', target);
+    };
+    const hasProxy = typeof Proxy !== 'undefined' && isNative(Proxy);
+    if (hasProxy) {
+        const isBuiltInModifier = makeMap('stop,prevent,self,ctrl,shift,alt,meta,exact');
+        config.keyCodes = new Proxy(config.keyCodes, {
+            set(target, key, value) {
+                if (isBuiltInModifier(key)) {
+                    warn$2(`Avoid overwriting built-in modifier in config.keyCodes: .${key}`);
+                    return false;
+                }
+                else {
+                    target[key] = value;
+                    return true;
+                }
+            }
+        });
+    }
+    const hasHandler = {
+        has(target, key) {
+            const has = key in target;
+            const isAllowed = allowedGlobals(key) ||
+                (typeof key === 'string' &&
+                    key.charAt(0) === '_' &&
+                    !(key in target.$data));
+            if (!has && !isAllowed) {
+                if (key in target.$data)
+                    warnReservedPrefix(target, key);
+                else
+                    warnNonPresent(target, key);
+            }
+            return has || !isAllowed;
+        }
+    };
+    const getHandler = {
+        get(target, key) {
+            if (typeof key === 'string' && !(key in target)) {
+                if (key in target.$data)
+                    warnReservedPrefix(target, key);
+                else
+                    warnNonPresent(target, key);
+            }
+            return target[key];
+        }
+    };
+    initProxy = function initProxy(vm) {
+        if (hasProxy) {
+            // determine which proxy handler to use
+            const options = vm.$options;
+            const handlers = options.render && options.render._withStripped ? getHandler : hasHandler;
+            vm._renderProxy = new Proxy(vm, handlers);
+        }
+        else {
+            vm._renderProxy = vm;
+        }
+    };
+}
+
+let uid$2 = 0;
+/**
+ * A dep is an observable that can have multiple
+ * directives subscribing to it.
+ * @internal
+ */
+class Dep {
+    constructor() {
+        this.id = uid$2++;
+        this.subs = [];
+    }
+    addSub(sub) {
+        this.subs.push(sub);
+    }
+    removeSub(sub) {
+        remove$2(this.subs, sub);
+    }
+    depend(info) {
+        if (Dep.target) {
+            Dep.target.addDep(this);
+            if (info && Dep.target.onTrack) {
+                Dep.target.onTrack(Object.assign({ effect: Dep.target }, info));
+            }
+        }
+    }
+    notify(info) {
+        // stabilize the subscriber list first
+        const subs = this.subs.slice();
+        if (!config.async) {
+            // subs aren't sorted in scheduler if not running async
+            // we need to sort them now to make sure they fire in correct
+            // order
+            subs.sort((a, b) => a.id - b.id);
+        }
+        for (let i = 0, l = subs.length; i < l; i++) {
+            if (info) {
+                const sub = subs[i];
+                sub.onTrigger &&
+                    sub.onTrigger(Object.assign({ effect: subs[i] }, info));
+            }
+            subs[i].update();
+        }
+    }
+}
+// The current target watcher being evaluated.
+// This is globally unique because only one watcher
+// can be evaluated at a time.
+Dep.target = null;
+const targetStack = [];
+function pushTarget(target) {
+    targetStack.push(target);
+    Dep.target = target;
+}
+function popTarget() {
+    targetStack.pop();
+    Dep.target = targetStack[targetStack.length - 1];
+}
+
 /*
  * not type checking this file because flow doesn't play well with
  * dynamically accessing methods on Array prototype
@@ -38466,6 +38461,267 @@ methodsToPatch.forEach(function (method) {
     });
 });
 
+const arrayKeys = Object.getOwnPropertyNames(arrayMethods);
+const NO_INIITIAL_VALUE = {};
+/**
+ * In some cases we may want to disable observation inside a component's
+ * update computation.
+ */
+let shouldObserve = true;
+function toggleObserving(value) {
+    shouldObserve = value;
+}
+// ssr mock dep
+const mockDep = {
+    notify: noop,
+    depend: noop,
+    addSub: noop,
+    removeSub: noop
+};
+/**
+ * Observer class that is attached to each observed
+ * object. Once attached, the observer converts the target
+ * object's property keys into getter/setters that
+ * collect dependencies and dispatch updates.
+ */
+class Observer {
+    constructor(value, shallow = false, mock = false) {
+        this.value = value;
+        this.shallow = shallow;
+        this.mock = mock;
+        // this.value = value
+        this.dep = mock ? mockDep : new Dep();
+        this.vmCount = 0;
+        def(value, '__ob__', this);
+        if (isArray(value)) {
+            if (!mock) {
+                if (hasProto) {
+                    value.__proto__ = arrayMethods;
+                    /* eslint-enable no-proto */
+                }
+                else {
+                    for (let i = 0, l = arrayKeys.length; i < l; i++) {
+                        const key = arrayKeys[i];
+                        def(value, key, arrayMethods[key]);
+                    }
+                }
+            }
+            if (!shallow) {
+                this.observeArray(value);
+            }
+        }
+        else {
+            /**
+             * Walk through all properties and convert them into
+             * getter/setters. This method should only be called when
+             * value type is Object.
+             */
+            const keys = Object.keys(value);
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                defineReactive(value, key, NO_INIITIAL_VALUE, undefined, shallow, mock);
+            }
+        }
+    }
+    /**
+     * Observe a list of Array items.
+     */
+    observeArray(value) {
+        for (let i = 0, l = value.length; i < l; i++) {
+            observe(value[i], false, this.mock);
+        }
+    }
+}
+// helpers
+/**
+ * Attempt to create an observer instance for a value,
+ * returns the new observer if successfully observed,
+ * or the existing observer if the value already has one.
+ */
+function observe(value, shallow, ssrMockReactivity) {
+    if (!isObject(value) || isRef(value) || value instanceof VNode) {
+        return;
+    }
+    let ob;
+    if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
+        ob = value.__ob__;
+    }
+    else if (shouldObserve &&
+        (ssrMockReactivity || !isServerRendering()) &&
+        (isArray(value) || isPlainObject(value)) &&
+        Object.isExtensible(value) &&
+        !value.__v_skip /* ReactiveFlags.SKIP */) {
+        ob = new Observer(value, shallow, ssrMockReactivity);
+    }
+    return ob;
+}
+/**
+ * Define a reactive property on an Object.
+ */
+function defineReactive(obj, key, val, customSetter, shallow, mock) {
+    const dep = new Dep();
+    const property = Object.getOwnPropertyDescriptor(obj, key);
+    if (property && property.configurable === false) {
+        return;
+    }
+    // cater for pre-defined getter/setters
+    const getter = property && property.get;
+    const setter = property && property.set;
+    if ((!getter || setter) &&
+        (val === NO_INIITIAL_VALUE || arguments.length === 2)) {
+        val = obj[key];
+    }
+    let childOb = !shallow && observe(val, false, mock);
+    Object.defineProperty(obj, key, {
+        enumerable: true,
+        configurable: true,
+        get: function reactiveGetter() {
+            const value = getter ? getter.call(obj) : val;
+            if (Dep.target) {
+                {
+                    dep.depend({
+                        target: obj,
+                        type: "get" /* TrackOpTypes.GET */,
+                        key
+                    });
+                }
+                if (childOb) {
+                    childOb.dep.depend();
+                    if (isArray(value)) {
+                        dependArray(value);
+                    }
+                }
+            }
+            return isRef(value) && !shallow ? value.value : value;
+        },
+        set: function reactiveSetter(newVal) {
+            const value = getter ? getter.call(obj) : val;
+            if (!hasChanged(value, newVal)) {
+                return;
+            }
+            if (customSetter) {
+                customSetter();
+            }
+            if (setter) {
+                setter.call(obj, newVal);
+            }
+            else if (getter) {
+                // #7981: for accessor properties without setter
+                return;
+            }
+            else if (isRef(value) && !isRef(newVal)) {
+                value.value = newVal;
+                return;
+            }
+            else {
+                val = newVal;
+            }
+            childOb = !shallow && observe(newVal, false, mock);
+            {
+                dep.notify({
+                    type: "set" /* TriggerOpTypes.SET */,
+                    target: obj,
+                    key,
+                    newValue: newVal,
+                    oldValue: value
+                });
+            }
+        }
+    });
+    return dep;
+}
+function set(target, key, val) {
+    if ((isUndef(target) || isPrimitive(target))) {
+        warn$2(`Cannot set reactive property on undefined, null, or primitive value: ${target}`);
+    }
+    if (isReadonly(target)) {
+        warn$2(`Set operation on key "${key}" failed: target is readonly.`);
+        return;
+    }
+    const ob = target.__ob__;
+    if (isArray(target) && isValidArrayIndex(key)) {
+        target.length = Math.max(target.length, key);
+        target.splice(key, 1, val);
+        // when mocking for SSR, array methods are not hijacked
+        if (ob && !ob.shallow && ob.mock) {
+            observe(val, false, true);
+        }
+        return val;
+    }
+    if (key in target && !(key in Object.prototype)) {
+        target[key] = val;
+        return val;
+    }
+    if (target._isVue || (ob && ob.vmCount)) {
+        warn$2('Avoid adding reactive properties to a Vue instance or its root $data ' +
+                'at runtime - declare it upfront in the data option.');
+        return val;
+    }
+    if (!ob) {
+        target[key] = val;
+        return val;
+    }
+    defineReactive(ob.value, key, val, undefined, ob.shallow, ob.mock);
+    {
+        ob.dep.notify({
+            type: "add" /* TriggerOpTypes.ADD */,
+            target: target,
+            key,
+            newValue: val,
+            oldValue: undefined
+        });
+    }
+    return val;
+}
+function del(target, key) {
+    if ((isUndef(target) || isPrimitive(target))) {
+        warn$2(`Cannot delete reactive property on undefined, null, or primitive value: ${target}`);
+    }
+    if (isArray(target) && isValidArrayIndex(key)) {
+        target.splice(key, 1);
+        return;
+    }
+    const ob = target.__ob__;
+    if (target._isVue || (ob && ob.vmCount)) {
+        warn$2('Avoid deleting properties on a Vue instance or its root $data ' +
+                '- just set it to null.');
+        return;
+    }
+    if (isReadonly(target)) {
+        warn$2(`Delete operation on key "${key}" failed: target is readonly.`);
+        return;
+    }
+    if (!hasOwn(target, key)) {
+        return;
+    }
+    delete target[key];
+    if (!ob) {
+        return;
+    }
+    {
+        ob.dep.notify({
+            type: "delete" /* TriggerOpTypes.DELETE */,
+            target: target,
+            key
+        });
+    }
+}
+/**
+ * Collect dependencies on array elements when the array is touched, since
+ * we cannot intercept array element access like property getters.
+ */
+function dependArray(value) {
+    for (let e, i = 0, l = value.length; i < l; i++) {
+        e = value[i];
+        if (e && e.__ob__) {
+            e.__ob__.dep.depend();
+        }
+        if (isArray(e)) {
+            dependArray(e);
+        }
+    }
+}
+
 function reactive(target) {
     makeReactive(target, false);
     return target;
@@ -38492,7 +38748,7 @@ function makeReactive(target, shallow) {
                 warn$2(`Target is already a ${existingOb.shallow ? `` : `non-`}shallow reactive object, and cannot be converted to ${shallow ? `` : `non-`}shallow.`);
             }
         }
-        const ob = observe(target, shallow);
+        const ob = observe(target, shallow, isServerRendering() /* ssr mock reactivity */);
         if (!ob) {
             if (target == null || isPrimitive(target)) {
                 warn$2(`value cannot be made reactive: ${String(target)}`);
@@ -38553,8 +38809,8 @@ function createRef(rawValue, shallow) {
     }
     const ref = {};
     def(ref, RefFlag, true);
-    def(ref, "__v_isShallow" /* ReactiveFlags.IS_SHALLOW */, true);
-    ref.dep = defineReactive(ref, 'value', rawValue, null, shallow);
+    def(ref, "__v_isShallow" /* ReactiveFlags.IS_SHALLOW */, shallow);
+    def(ref, 'dep', defineReactive(ref, 'value', rawValue, null, shallow, isServerRendering()));
     return ref;
 }
 function triggerRef(ref) {
@@ -38588,7 +38844,18 @@ function proxyWithRefUnwrap(target, source, key) {
     Object.defineProperty(target, key, {
         enumerable: true,
         configurable: true,
-        get: () => unref(source[key]),
+        get: () => {
+            const val = source[key];
+            if (isRef(val)) {
+                return val.value;
+            }
+            else {
+                const ob = val && val.__ob__;
+                if (ob)
+                    ob.dep.depend();
+                return val;
+            }
+        },
         set: value => {
             const oldValue = source[key];
             if (isRef(oldValue) && !isRef(value)) {
@@ -38727,43 +38994,61 @@ function shallowReadonly(target) {
     return createReadonly(target, true);
 }
 
-const seenObjects = new _Set();
-/**
- * Recursively traverse an object to evoke all converted
- * getters, so that every nested property inside the object
- * is collected as a "deep" dependency.
- */
-function traverse(val) {
-    _traverse(val, seenObjects);
-    seenObjects.clear();
-    return val;
-}
-function _traverse(val, seen) {
-    let i, keys;
-    const isA = isArray(val);
-    if ((!isA && !isObject(val)) ||
-        Object.isFrozen(val) ||
-        val instanceof VNode) {
-        return;
-    }
-    if (val.__ob__) {
-        const depId = val.__ob__.dep.id;
-        if (seen.has(depId)) {
-            return;
-        }
-        seen.add(depId);
-    }
-    if (isA) {
-        i = val.length;
-        while (i--)
-            _traverse(val[i], seen);
+function computed(getterOrOptions, debugOptions) {
+    let getter;
+    let setter;
+    const onlyGetter = isFunction(getterOrOptions);
+    if (onlyGetter) {
+        getter = getterOrOptions;
+        setter = () => {
+                warn$2('Write operation failed: computed value is readonly');
+            }
+            ;
     }
     else {
-        keys = Object.keys(val);
-        i = keys.length;
-        while (i--)
-            _traverse(val[keys[i]], seen);
+        getter = getterOrOptions.get;
+        setter = getterOrOptions.set;
     }
+    const watcher = isServerRendering()
+        ? null
+        : new Watcher(currentInstance, getter, noop, { lazy: true });
+    if (watcher && debugOptions) {
+        watcher.onTrack = debugOptions.onTrack;
+        watcher.onTrigger = debugOptions.onTrigger;
+    }
+    const ref = {
+        // some libs rely on the presence effect for checking computed refs
+        // from normal refs, but the implementation doesn't matter
+        effect: watcher,
+        get value() {
+            if (watcher) {
+                if (watcher.dirty) {
+                    watcher.evaluate();
+                }
+                if (Dep.target) {
+                    if (Dep.target.onTrack) {
+                        Dep.target.onTrack({
+                            effect: Dep.target,
+                            target: ref,
+                            type: "get" /* TrackOpTypes.GET */,
+                            key: 'value'
+                        });
+                    }
+                    watcher.depend();
+                }
+                return watcher.value;
+            }
+            else {
+                return getter();
+            }
+        },
+        set value(newVal) {
+            setter(newVal);
+        }
+    };
+    def(ref, RefFlag, true);
+    def(ref, "__v_isReadonly" /* ReactiveFlags.IS_READONLY */, onlyGetter);
+    return ref;
 }
 
 let mark;
@@ -39022,81 +39307,527 @@ function normalizeArrayChildren(children, nestedIndex) {
     return res;
 }
 
-/* not type checking this file because flow doesn't play well with Proxy */
-let initProxy;
-{
-    const allowedGlobals = makeMap('Infinity,undefined,NaN,isFinite,isNaN,' +
-        'parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,' +
-        'Math,Number,Date,Array,Object,Boolean,String,RegExp,Map,Set,JSON,Intl,BigInt,' +
-        'require' // for Webpack/Browserify
-    );
-    const warnNonPresent = (target, key) => {
-        warn$2(`Property or method "${key}" is not defined on the instance but ` +
-            'referenced during render. Make sure that this property is reactive, ' +
-            'either in the data option, or for class-based components, by ' +
-            'initializing the property. ' +
-            'See: https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties.', target);
-    };
-    const warnReservedPrefix = (target, key) => {
-        warn$2(`Property "${key}" must be accessed with "$data.${key}" because ` +
-            'properties starting with "$" or "_" are not proxied in the Vue instance to ' +
-            'prevent conflicts with Vue internals. ' +
-            'See: https://vuejs.org/v2/api/#data', target);
-    };
-    const hasProxy = typeof Proxy !== 'undefined' && isNative(Proxy);
-    if (hasProxy) {
-        const isBuiltInModifier = makeMap('stop,prevent,self,ctrl,shift,alt,meta,exact');
-        config.keyCodes = new Proxy(config.keyCodes, {
-            set(target, key, value) {
-                if (isBuiltInModifier(key)) {
-                    warn$2(`Avoid overwriting built-in modifier in config.keyCodes: .${key}`);
-                    return false;
-                }
-                else {
-                    target[key] = value;
-                    return true;
-                }
-            }
-        });
+const SIMPLE_NORMALIZE = 1;
+const ALWAYS_NORMALIZE = 2;
+// wrapper function for providing a more flexible interface
+// without getting yelled at by flow
+function createElement$1(context, tag, data, children, normalizationType, alwaysNormalize) {
+    if (isArray(data) || isPrimitive(data)) {
+        normalizationType = children;
+        children = data;
+        data = undefined;
     }
-    const hasHandler = {
-        has(target, key) {
-            const has = key in target;
-            const isAllowed = allowedGlobals(key) ||
-                (typeof key === 'string' &&
-                    key.charAt(0) === '_' &&
-                    !(key in target.$data));
-            if (!has && !isAllowed) {
-                if (key in target.$data)
-                    warnReservedPrefix(target, key);
-                else
-                    warnNonPresent(target, key);
+    if (isTrue(alwaysNormalize)) {
+        normalizationType = ALWAYS_NORMALIZE;
+    }
+    return _createElement(context, tag, data, children, normalizationType);
+}
+function _createElement(context, tag, data, children, normalizationType) {
+    if (isDef(data) && isDef(data.__ob__)) {
+        warn$2(`Avoid using observed data object as vnode data: ${JSON.stringify(data)}\n` + 'Always create fresh vnode data objects in each render!', context);
+        return createEmptyVNode();
+    }
+    // object syntax in v-bind
+    if (isDef(data) && isDef(data.is)) {
+        tag = data.is;
+    }
+    if (!tag) {
+        // in case of component :is set to falsy value
+        return createEmptyVNode();
+    }
+    // warn against non-primitive key
+    if (isDef(data) && isDef(data.key) && !isPrimitive(data.key)) {
+        warn$2('Avoid using non-primitive value as key, ' +
+            'use string/number value instead.', context);
+    }
+    // support single function children as default scoped slot
+    if (isArray(children) && isFunction(children[0])) {
+        data = data || {};
+        data.scopedSlots = { default: children[0] };
+        children.length = 0;
+    }
+    if (normalizationType === ALWAYS_NORMALIZE) {
+        children = normalizeChildren(children);
+    }
+    else if (normalizationType === SIMPLE_NORMALIZE) {
+        children = simpleNormalizeChildren(children);
+    }
+    let vnode, ns;
+    if (typeof tag === 'string') {
+        let Ctor;
+        ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag);
+        if (config.isReservedTag(tag)) {
+            // platform built-in elements
+            if (isDef(data) &&
+                isDef(data.nativeOn) &&
+                data.tag !== 'component') {
+                warn$2(`The .native modifier for v-on is only valid on components but it was used on <${tag}>.`, context);
             }
-            return has || !isAllowed;
+            vnode = new VNode(config.parsePlatformTagName(tag), data, children, undefined, undefined, context);
         }
-    };
-    const getHandler = {
-        get(target, key) {
-            if (typeof key === 'string' && !(key in target)) {
-                if (key in target.$data)
-                    warnReservedPrefix(target, key);
-                else
-                    warnNonPresent(target, key);
-            }
-            return target[key];
-        }
-    };
-    initProxy = function initProxy(vm) {
-        if (hasProxy) {
-            // determine which proxy handler to use
-            const options = vm.$options;
-            const handlers = options.render && options.render._withStripped ? getHandler : hasHandler;
-            vm._renderProxy = new Proxy(vm, handlers);
+        else if ((!data || !data.pre) &&
+            isDef((Ctor = resolveAsset(context.$options, 'components', tag)))) {
+            // component
+            vnode = createComponent(Ctor, data, context, children, tag);
         }
         else {
-            vm._renderProxy = vm;
+            // unknown or unlisted namespaced elements
+            // check at runtime because it may get assigned a namespace when its
+            // parent normalizes children
+            vnode = new VNode(tag, data, children, undefined, undefined, context);
         }
+    }
+    else {
+        // direct component options / constructor
+        vnode = createComponent(tag, data, context, children);
+    }
+    if (isArray(vnode)) {
+        return vnode;
+    }
+    else if (isDef(vnode)) {
+        if (isDef(ns))
+            applyNS(vnode, ns);
+        if (isDef(data))
+            registerDeepBindings(data);
+        return vnode;
+    }
+    else {
+        return createEmptyVNode();
+    }
+}
+function applyNS(vnode, ns, force) {
+    vnode.ns = ns;
+    if (vnode.tag === 'foreignObject') {
+        // use default namespace inside foreignObject
+        ns = undefined;
+        force = true;
+    }
+    if (isDef(vnode.children)) {
+        for (let i = 0, l = vnode.children.length; i < l; i++) {
+            const child = vnode.children[i];
+            if (isDef(child.tag) &&
+                (isUndef(child.ns) || (isTrue(force) && child.tag !== 'svg'))) {
+                applyNS(child, ns, force);
+            }
+        }
+    }
+}
+// ref #5318
+// necessary to ensure parent re-render when deep bindings like :style and
+// :class are used on slot nodes
+function registerDeepBindings(data) {
+    if (isObject(data.style)) {
+        traverse(data.style);
+    }
+    if (isObject(data.class)) {
+        traverse(data.class);
+    }
+}
+
+/**
+ * Runtime helper for rendering v-for lists.
+ */
+function renderList(val, render) {
+    let ret = null, i, l, keys, key;
+    if (isArray(val) || typeof val === 'string') {
+        ret = new Array(val.length);
+        for (i = 0, l = val.length; i < l; i++) {
+            ret[i] = render(val[i], i);
+        }
+    }
+    else if (typeof val === 'number') {
+        ret = new Array(val);
+        for (i = 0; i < val; i++) {
+            ret[i] = render(i + 1, i);
+        }
+    }
+    else if (isObject(val)) {
+        if (hasSymbol && val[Symbol.iterator]) {
+            ret = [];
+            const iterator = val[Symbol.iterator]();
+            let result = iterator.next();
+            while (!result.done) {
+                ret.push(render(result.value, ret.length));
+                result = iterator.next();
+            }
+        }
+        else {
+            keys = Object.keys(val);
+            ret = new Array(keys.length);
+            for (i = 0, l = keys.length; i < l; i++) {
+                key = keys[i];
+                ret[i] = render(val[key], key, i);
+            }
+        }
+    }
+    if (!isDef(ret)) {
+        ret = [];
+    }
+    ret._isVList = true;
+    return ret;
+}
+
+/**
+ * Runtime helper for rendering <slot>
+ */
+function renderSlot(name, fallbackRender, props, bindObject) {
+    const scopedSlotFn = this.$scopedSlots[name];
+    let nodes;
+    if (scopedSlotFn) {
+        // scoped slot
+        props = props || {};
+        if (bindObject) {
+            if (!isObject(bindObject)) {
+                warn$2('slot v-bind without argument expects an Object', this);
+            }
+            props = extend(extend({}, bindObject), props);
+        }
+        nodes =
+            scopedSlotFn(props) ||
+                (isFunction(fallbackRender) ? fallbackRender() : fallbackRender);
+    }
+    else {
+        nodes =
+            this.$slots[name] ||
+                (isFunction(fallbackRender) ? fallbackRender() : fallbackRender);
+    }
+    const target = props && props.slot;
+    if (target) {
+        return this.$createElement('template', { slot: target }, nodes);
+    }
+    else {
+        return nodes;
+    }
+}
+
+/**
+ * Runtime helper for resolving filters
+ */
+function resolveFilter(id) {
+    return resolveAsset(this.$options, 'filters', id, true) || identity;
+}
+
+function isKeyNotMatch(expect, actual) {
+    if (isArray(expect)) {
+        return expect.indexOf(actual) === -1;
+    }
+    else {
+        return expect !== actual;
+    }
+}
+/**
+ * Runtime helper for checking keyCodes from config.
+ * exposed as Vue.prototype._k
+ * passing in eventKeyName as last argument separately for backwards compat
+ */
+function checkKeyCodes(eventKeyCode, key, builtInKeyCode, eventKeyName, builtInKeyName) {
+    const mappedKeyCode = config.keyCodes[key] || builtInKeyCode;
+    if (builtInKeyName && eventKeyName && !config.keyCodes[key]) {
+        return isKeyNotMatch(builtInKeyName, eventKeyName);
+    }
+    else if (mappedKeyCode) {
+        return isKeyNotMatch(mappedKeyCode, eventKeyCode);
+    }
+    else if (eventKeyName) {
+        return hyphenate(eventKeyName) !== key;
+    }
+    return eventKeyCode === undefined;
+}
+
+/**
+ * Runtime helper for merging v-bind="object" into a VNode's data.
+ */
+function bindObjectProps(data, tag, value, asProp, isSync) {
+    if (value) {
+        if (!isObject(value)) {
+            warn$2('v-bind without argument expects an Object or Array value', this);
+        }
+        else {
+            if (isArray(value)) {
+                value = toObject(value);
+            }
+            let hash;
+            for (const key in value) {
+                if (key === 'class' || key === 'style' || isReservedAttribute(key)) {
+                    hash = data;
+                }
+                else {
+                    const type = data.attrs && data.attrs.type;
+                    hash =
+                        asProp || config.mustUseProp(tag, type, key)
+                            ? data.domProps || (data.domProps = {})
+                            : data.attrs || (data.attrs = {});
+                }
+                const camelizedKey = camelize(key);
+                const hyphenatedKey = hyphenate(key);
+                if (!(camelizedKey in hash) && !(hyphenatedKey in hash)) {
+                    hash[key] = value[key];
+                    if (isSync) {
+                        const on = data.on || (data.on = {});
+                        on[`update:${key}`] = function ($event) {
+                            value[key] = $event;
+                        };
+                    }
+                }
+            }
+        }
+    }
+    return data;
+}
+
+/**
+ * Runtime helper for rendering static trees.
+ */
+function renderStatic(index, isInFor) {
+    const cached = this._staticTrees || (this._staticTrees = []);
+    let tree = cached[index];
+    // if has already-rendered static tree and not inside v-for,
+    // we can reuse the same tree.
+    if (tree && !isInFor) {
+        return tree;
+    }
+    // otherwise, render a fresh tree.
+    tree = cached[index] = this.$options.staticRenderFns[index].call(this._renderProxy, this._c, this // for render fns generated for functional component templates
+    );
+    markStatic$1(tree, `__static__${index}`, false);
+    return tree;
+}
+/**
+ * Runtime helper for v-once.
+ * Effectively it means marking the node as static with a unique key.
+ */
+function markOnce(tree, index, key) {
+    markStatic$1(tree, `__once__${index}${key ? `_${key}` : ``}`, true);
+    return tree;
+}
+function markStatic$1(tree, key, isOnce) {
+    if (isArray(tree)) {
+        for (let i = 0; i < tree.length; i++) {
+            if (tree[i] && typeof tree[i] !== 'string') {
+                markStaticNode(tree[i], `${key}_${i}`, isOnce);
+            }
+        }
+    }
+    else {
+        markStaticNode(tree, key, isOnce);
+    }
+}
+function markStaticNode(node, key, isOnce) {
+    node.isStatic = true;
+    node.key = key;
+    node.isOnce = isOnce;
+}
+
+function bindObjectListeners(data, value) {
+    if (value) {
+        if (!isPlainObject(value)) {
+            warn$2('v-on without argument expects an Object value', this);
+        }
+        else {
+            const on = (data.on = data.on ? extend({}, data.on) : {});
+            for (const key in value) {
+                const existing = on[key];
+                const ours = value[key];
+                on[key] = existing ? [].concat(existing, ours) : ours;
+            }
+        }
+    }
+    return data;
+}
+
+function resolveScopedSlots(fns, res, 
+// the following are added in 2.6
+hasDynamicKeys, contentHashKey) {
+    res = res || { $stable: !hasDynamicKeys };
+    for (let i = 0; i < fns.length; i++) {
+        const slot = fns[i];
+        if (isArray(slot)) {
+            resolveScopedSlots(slot, res, hasDynamicKeys);
+        }
+        else if (slot) {
+            // marker for reverse proxying v-slot without scope on this.$slots
+            // @ts-expect-error
+            if (slot.proxy) {
+                // @ts-expect-error
+                slot.fn.proxy = true;
+            }
+            res[slot.key] = slot.fn;
+        }
+    }
+    if (contentHashKey) {
+        res.$key = contentHashKey;
+    }
+    return res;
+}
+
+// helper to process dynamic keys for dynamic arguments in v-bind and v-on.
+function bindDynamicKeys(baseObj, values) {
+    for (let i = 0; i < values.length; i += 2) {
+        const key = values[i];
+        if (typeof key === 'string' && key) {
+            baseObj[values[i]] = values[i + 1];
+        }
+        else if (key !== '' && key !== null) {
+            // null is a special value for explicitly removing a binding
+            warn$2(`Invalid value for dynamic directive argument (expected string or null): ${key}`, this);
+        }
+    }
+    return baseObj;
+}
+// helper to dynamically append modifier runtime markers to event names.
+// ensure only append when value is already string, otherwise it will be cast
+// to string and cause the type check to miss.
+function prependModifier(value, symbol) {
+    return typeof value === 'string' ? symbol + value : value;
+}
+
+function installRenderHelpers(target) {
+    target._o = markOnce;
+    target._n = toNumber;
+    target._s = toString;
+    target._l = renderList;
+    target._t = renderSlot;
+    target._q = looseEqual;
+    target._i = looseIndexOf;
+    target._m = renderStatic;
+    target._f = resolveFilter;
+    target._k = checkKeyCodes;
+    target._b = bindObjectProps;
+    target._v = createTextVNode;
+    target._e = createEmptyVNode;
+    target._u = resolveScopedSlots;
+    target._g = bindObjectListeners;
+    target._d = bindDynamicKeys;
+    target._p = prependModifier;
+}
+
+/**
+ * Runtime helper for resolving raw children VNodes into a slot object.
+ */
+function resolveSlots(children, context) {
+    if (!children || !children.length) {
+        return {};
+    }
+    const slots = {};
+    for (let i = 0, l = children.length; i < l; i++) {
+        const child = children[i];
+        const data = child.data;
+        // remove slot attribute if the node is resolved as a Vue slot node
+        if (data && data.attrs && data.attrs.slot) {
+            delete data.attrs.slot;
+        }
+        // named slots should only be respected if the vnode was rendered in the
+        // same context.
+        if ((child.context === context || child.fnContext === context) &&
+            data &&
+            data.slot != null) {
+            const name = data.slot;
+            const slot = slots[name] || (slots[name] = []);
+            if (child.tag === 'template') {
+                slot.push.apply(slot, child.children || []);
+            }
+            else {
+                slot.push(child);
+            }
+        }
+        else {
+            (slots.default || (slots.default = [])).push(child);
+        }
+    }
+    // ignore slots that contains only whitespace
+    for (const name in slots) {
+        if (slots[name].every(isWhitespace)) {
+            delete slots[name];
+        }
+    }
+    return slots;
+}
+function isWhitespace(node) {
+    return (node.isComment && !node.asyncFactory) || node.text === ' ';
+}
+
+function isAsyncPlaceholder(node) {
+    // @ts-expect-error not really boolean type
+    return node.isComment && node.asyncFactory;
+}
+
+function normalizeScopedSlots(ownerVm, scopedSlots, normalSlots, prevScopedSlots) {
+    let res;
+    const hasNormalSlots = Object.keys(normalSlots).length > 0;
+    const isStable = scopedSlots ? !!scopedSlots.$stable : !hasNormalSlots;
+    const key = scopedSlots && scopedSlots.$key;
+    if (!scopedSlots) {
+        res = {};
+    }
+    else if (scopedSlots._normalized) {
+        // fast path 1: child component re-render only, parent did not change
+        return scopedSlots._normalized;
+    }
+    else if (isStable &&
+        prevScopedSlots &&
+        prevScopedSlots !== emptyObject &&
+        key === prevScopedSlots.$key &&
+        !hasNormalSlots &&
+        !prevScopedSlots.$hasNormal) {
+        // fast path 2: stable scoped slots w/ no normal slots to proxy,
+        // only need to normalize once
+        return prevScopedSlots;
+    }
+    else {
+        res = {};
+        for (const key in scopedSlots) {
+            if (scopedSlots[key] && key[0] !== '$') {
+                res[key] = normalizeScopedSlot(ownerVm, normalSlots, key, scopedSlots[key]);
+            }
+        }
+    }
+    // expose normal slots on scopedSlots
+    for (const key in normalSlots) {
+        if (!(key in res)) {
+            res[key] = proxyNormalSlot(normalSlots, key);
+        }
+    }
+    // avoriaz seems to mock a non-extensible $scopedSlots object
+    // and when that is passed down this would cause an error
+    if (scopedSlots && Object.isExtensible(scopedSlots)) {
+        scopedSlots._normalized = res;
+    }
+    def(res, '$stable', isStable);
+    def(res, '$key', key);
+    def(res, '$hasNormal', hasNormalSlots);
+    return res;
+}
+function normalizeScopedSlot(vm, normalSlots, key, fn) {
+    const normalized = function () {
+        const cur = currentInstance;
+        setCurrentInstance(vm);
+        let res = arguments.length ? fn.apply(null, arguments) : fn({});
+        res =
+            res && typeof res === 'object' && !isArray(res)
+                ? [res] // single vnode
+                : normalizeChildren(res);
+        const vnode = res && res[0];
+        setCurrentInstance(cur);
+        return res &&
+            (!vnode ||
+                (res.length === 1 && vnode.isComment && !isAsyncPlaceholder(vnode))) // #9658, #10391
+            ? undefined
+            : res;
     };
+    // this is a slot using the new v-slot syntax without scope. although it is
+    // compiled as a scoped slot, render fn users would expect it to be present
+    // on this.$slots because the usage is semantically a normal slot.
+    if (fn.proxy) {
+        Object.defineProperty(normalSlots, key, {
+            get: normalized,
+            enumerable: true,
+            configurable: true
+        });
+    }
+    return normalized;
+}
+function proxyNormalSlot(slots, key) {
+    return () => slots[key];
 }
 
 function initSetup(vm) {
@@ -39270,1445 +40001,6 @@ function mergeDefaults(raw, defaults) {
     return props;
 }
 
-const sharedPropertyDefinition = {
-    enumerable: true,
-    configurable: true,
-    get: noop,
-    set: noop
-};
-function proxy(target, sourceKey, key) {
-    sharedPropertyDefinition.get = function proxyGetter() {
-        return this[sourceKey][key];
-    };
-    sharedPropertyDefinition.set = function proxySetter(val) {
-        this[sourceKey][key] = val;
-    };
-    Object.defineProperty(target, key, sharedPropertyDefinition);
-}
-function initState(vm) {
-    const opts = vm.$options;
-    if (opts.props)
-        initProps$1(vm, opts.props);
-    // Composition API
-    initSetup(vm);
-    if (opts.methods)
-        initMethods(vm, opts.methods);
-    if (opts.data) {
-        initData(vm);
-    }
-    else {
-        const ob = observe((vm._data = {}));
-        ob && ob.vmCount++;
-    }
-    if (opts.computed)
-        initComputed$1(vm, opts.computed);
-    if (opts.watch && opts.watch !== nativeWatch) {
-        initWatch(vm, opts.watch);
-    }
-}
-function initProps$1(vm, propsOptions) {
-    const propsData = vm.$options.propsData || {};
-    const props = (vm._props = shallowReactive({}));
-    // cache prop keys so that future props updates can iterate using Array
-    // instead of dynamic object key enumeration.
-    const keys = (vm.$options._propKeys = []);
-    const isRoot = !vm.$parent;
-    // root instance props should be converted
-    if (!isRoot) {
-        toggleObserving(false);
-    }
-    for (const key in propsOptions) {
-        keys.push(key);
-        const value = validateProp(key, propsOptions, propsData, vm);
-        /* istanbul ignore else */
-        {
-            const hyphenatedKey = hyphenate(key);
-            if (isReservedAttribute(hyphenatedKey) ||
-                config.isReservedAttr(hyphenatedKey)) {
-                warn$2(`"${hyphenatedKey}" is a reserved attribute and cannot be used as component prop.`, vm);
-            }
-            defineReactive(props, key, value, () => {
-                if (!isRoot && !isUpdatingChildComponent) {
-                    warn$2(`Avoid mutating a prop directly since the value will be ` +
-                        `overwritten whenever the parent component re-renders. ` +
-                        `Instead, use a data or computed property based on the prop's ` +
-                        `value. Prop being mutated: "${key}"`, vm);
-                }
-            });
-        }
-        // static props are already proxied on the component's prototype
-        // during Vue.extend(). We only need to proxy props defined at
-        // instantiation here.
-        if (!(key in vm)) {
-            proxy(vm, `_props`, key);
-        }
-    }
-    toggleObserving(true);
-}
-function initData(vm) {
-    let data = vm.$options.data;
-    data = vm._data = isFunction(data) ? getData(data, vm) : data || {};
-    if (!isPlainObject(data)) {
-        data = {};
-        warn$2('data functions should return an object:\n' +
-                'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function', vm);
-    }
-    // proxy data on instance
-    const keys = Object.keys(data);
-    const props = vm.$options.props;
-    const methods = vm.$options.methods;
-    let i = keys.length;
-    while (i--) {
-        const key = keys[i];
-        {
-            if (methods && hasOwn(methods, key)) {
-                warn$2(`Method "${key}" has already been defined as a data property.`, vm);
-            }
-        }
-        if (props && hasOwn(props, key)) {
-            warn$2(`The data property "${key}" is already declared as a prop. ` +
-                    `Use prop default value instead.`, vm);
-        }
-        else if (!isReserved(key)) {
-            proxy(vm, `_data`, key);
-        }
-    }
-    // observe data
-    const ob = observe(data);
-    ob && ob.vmCount++;
-}
-function getData(data, vm) {
-    // #7573 disable dep collection when invoking data getters
-    pushTarget();
-    try {
-        return data.call(vm, vm);
-    }
-    catch (e) {
-        handleError(e, vm, `data()`);
-        return {};
-    }
-    finally {
-        popTarget();
-    }
-}
-const computedWatcherOptions = { lazy: true };
-function initComputed$1(vm, computed) {
-    // $flow-disable-line
-    const watchers = (vm._computedWatchers = Object.create(null));
-    // computed properties are just getters during SSR
-    const isSSR = isServerRendering();
-    for (const key in computed) {
-        const userDef = computed[key];
-        const getter = isFunction(userDef) ? userDef : userDef.get;
-        if (getter == null) {
-            warn$2(`Getter is missing for computed property "${key}".`, vm);
-        }
-        if (!isSSR) {
-            // create internal watcher for the computed property.
-            watchers[key] = new Watcher(vm, getter || noop, noop, computedWatcherOptions);
-        }
-        // component-defined computed properties are already defined on the
-        // component prototype. We only need to define computed properties defined
-        // at instantiation here.
-        if (!(key in vm)) {
-            defineComputed(vm, key, userDef);
-        }
-        else {
-            if (key in vm.$data) {
-                warn$2(`The computed property "${key}" is already defined in data.`, vm);
-            }
-            else if (vm.$options.props && key in vm.$options.props) {
-                warn$2(`The computed property "${key}" is already defined as a prop.`, vm);
-            }
-            else if (vm.$options.methods && key in vm.$options.methods) {
-                warn$2(`The computed property "${key}" is already defined as a method.`, vm);
-            }
-        }
-    }
-}
-function defineComputed(target, key, userDef) {
-    const shouldCache = !isServerRendering();
-    if (isFunction(userDef)) {
-        sharedPropertyDefinition.get = shouldCache
-            ? createComputedGetter(key)
-            : createGetterInvoker(userDef);
-        sharedPropertyDefinition.set = noop;
-    }
-    else {
-        sharedPropertyDefinition.get = userDef.get
-            ? shouldCache && userDef.cache !== false
-                ? createComputedGetter(key)
-                : createGetterInvoker(userDef.get)
-            : noop;
-        sharedPropertyDefinition.set = userDef.set || noop;
-    }
-    if (sharedPropertyDefinition.set === noop) {
-        sharedPropertyDefinition.set = function () {
-            warn$2(`Computed property "${key}" was assigned to but it has no setter.`, this);
-        };
-    }
-    Object.defineProperty(target, key, sharedPropertyDefinition);
-}
-function createComputedGetter(key) {
-    return function computedGetter() {
-        const watcher = this._computedWatchers && this._computedWatchers[key];
-        if (watcher) {
-            if (watcher.dirty) {
-                watcher.evaluate();
-            }
-            if (Dep.target) {
-                if (Dep.target.onTrack) {
-                    Dep.target.onTrack({
-                        effect: Dep.target,
-                        target: this,
-                        type: "get" /* TrackOpTypes.GET */,
-                        key
-                    });
-                }
-                watcher.depend();
-            }
-            return watcher.value;
-        }
-    };
-}
-function createGetterInvoker(fn) {
-    return function computedGetter() {
-        return fn.call(this, this);
-    };
-}
-function initMethods(vm, methods) {
-    const props = vm.$options.props;
-    for (const key in methods) {
-        {
-            if (typeof methods[key] !== 'function') {
-                warn$2(`Method "${key}" has type "${typeof methods[key]}" in the component definition. ` +
-                    `Did you reference the function correctly?`, vm);
-            }
-            if (props && hasOwn(props, key)) {
-                warn$2(`Method "${key}" has already been defined as a prop.`, vm);
-            }
-            if (key in vm && isReserved(key)) {
-                warn$2(`Method "${key}" conflicts with an existing Vue instance method. ` +
-                    `Avoid defining component methods that start with _ or $.`);
-            }
-        }
-        vm[key] = typeof methods[key] !== 'function' ? noop : bind$1(methods[key], vm);
-    }
-}
-function initWatch(vm, watch) {
-    for (const key in watch) {
-        const handler = watch[key];
-        if (isArray(handler)) {
-            for (let i = 0; i < handler.length; i++) {
-                createWatcher(vm, key, handler[i]);
-            }
-        }
-        else {
-            createWatcher(vm, key, handler);
-        }
-    }
-}
-function createWatcher(vm, expOrFn, handler, options) {
-    if (isPlainObject(handler)) {
-        options = handler;
-        handler = handler.handler;
-    }
-    if (typeof handler === 'string') {
-        handler = vm[handler];
-    }
-    return vm.$watch(expOrFn, handler, options);
-}
-function stateMixin(Vue) {
-    // flow somehow has problems with directly declared definition object
-    // when using Object.defineProperty, so we have to procedurally build up
-    // the object here.
-    const dataDef = {};
-    dataDef.get = function () {
-        return this._data;
-    };
-    const propsDef = {};
-    propsDef.get = function () {
-        return this._props;
-    };
-    {
-        dataDef.set = function () {
-            warn$2('Avoid replacing instance root $data. ' +
-                'Use nested data properties instead.', this);
-        };
-        propsDef.set = function () {
-            warn$2(`$props is readonly.`, this);
-        };
-    }
-    Object.defineProperty(Vue.prototype, '$data', dataDef);
-    Object.defineProperty(Vue.prototype, '$props', propsDef);
-    Vue.prototype.$set = set;
-    Vue.prototype.$delete = del;
-    Vue.prototype.$watch = function (expOrFn, cb, options) {
-        const vm = this;
-        if (isPlainObject(cb)) {
-            return createWatcher(vm, expOrFn, cb, options);
-        }
-        options = options || {};
-        options.user = true;
-        const watcher = new Watcher(vm, expOrFn, cb, options);
-        if (options.immediate) {
-            const info = `callback for immediate watcher "${watcher.expression}"`;
-            pushTarget();
-            invokeWithErrorHandling(cb, vm, [watcher.value], vm, info);
-            popTarget();
-        }
-        return function unwatchFn() {
-            watcher.teardown();
-        };
-    };
-}
-
-function provide(key, value) {
-    if (!currentInstance) {
-        {
-            warn$2(`provide() can only be used inside setup().`);
-        }
-    }
-    else {
-        let provides = currentInstance._provided;
-        // by default an instance inherits its parent's provides object
-        // but when it needs to provide values of its own, it creates its
-        // own provides object using parent provides object as prototype.
-        // this way in `inject` we can simply look up injections from direct
-        // parent and let the prototype chain do the work.
-        const parentProvides = currentInstance.$parent && currentInstance.$parent._provided;
-        if (parentProvides === provides) {
-            provides = currentInstance._provided = Object.create(parentProvides);
-        }
-        // TS doesn't allow symbol as index type
-        provides[key] = value;
-    }
-}
-function inject(key, defaultValue, treatDefaultAsFactory = false) {
-    // fallback to `currentRenderingInstance` so that this can be called in
-    // a functional component
-    const instance = currentInstance;
-    if (instance) {
-        // #2400
-        // to support `app.use` plugins,
-        // fallback to appContext's `provides` if the instance is at root
-        const provides = instance.$parent && instance.$parent._provided;
-        if (provides && key in provides) {
-            // TS doesn't allow symbol as index type
-            return provides[key];
-        }
-        else if (arguments.length > 1) {
-            return treatDefaultAsFactory && isFunction(defaultValue)
-                ? defaultValue.call(instance)
-                : defaultValue;
-        }
-        else {
-            warn$2(`injection "${String(key)}" not found.`);
-        }
-    }
-    else {
-        warn$2(`inject() can only be used inside setup() or functional components.`);
-    }
-}
-
-function initProvide(vm) {
-    const provideOption = vm.$options.provide;
-    if (provideOption) {
-        const provided = isFunction(provideOption)
-            ? provideOption.call(vm)
-            : provideOption;
-        if (!isObject(provided)) {
-            return;
-        }
-        const keys = hasSymbol ? Reflect.ownKeys(provided) : Object.keys(provided);
-        setCurrentInstance(vm);
-        for (let i = 0; i < keys.length; i++) {
-            provide(keys[i], provided[keys[i]]);
-        }
-        setCurrentInstance();
-    }
-}
-function initInjections(vm) {
-    const result = resolveInject(vm.$options.inject, vm);
-    if (result) {
-        toggleObserving(false);
-        Object.keys(result).forEach(key => {
-            /* istanbul ignore else */
-            {
-                defineReactive(vm, key, result[key], () => {
-                    warn$2(`Avoid mutating an injected value directly since the changes will be ` +
-                        `overwritten whenever the provided component re-renders. ` +
-                        `injection being mutated: "${key}"`, vm);
-                });
-            }
-        });
-        toggleObserving(true);
-    }
-}
-function resolveInject(inject, vm) {
-    if (inject) {
-        // inject is :any because flow is not smart enough to figure out cached
-        const result = Object.create(null);
-        const keys = hasSymbol ? Reflect.ownKeys(inject) : Object.keys(inject);
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i];
-            // #6574 in case the inject object is observed...
-            if (key === '__ob__')
-                continue;
-            const provideKey = inject[key].from;
-            if (provideKey in vm._provided) {
-                result[key] = vm._provided[provideKey];
-            }
-            else if ('default' in inject[key]) {
-                const provideDefault = inject[key].default;
-                result[key] = isFunction(provideDefault)
-                    ? provideDefault.call(vm)
-                    : provideDefault;
-            }
-            else {
-                warn$2(`Injection "${key}" not found`, vm);
-            }
-        }
-        return result;
-    }
-}
-
-let activeEffectScope;
-class EffectScope {
-    constructor(detached = false) {
-        /**
-         * @internal
-         */
-        this.active = true;
-        /**
-         * @internal
-         */
-        this.effects = [];
-        /**
-         * @internal
-         */
-        this.cleanups = [];
-        if (!detached && activeEffectScope) {
-            this.parent = activeEffectScope;
-            this.index =
-                (activeEffectScope.scopes || (activeEffectScope.scopes = [])).push(this) - 1;
-        }
-    }
-    run(fn) {
-        if (this.active) {
-            const currentEffectScope = activeEffectScope;
-            try {
-                activeEffectScope = this;
-                return fn();
-            }
-            finally {
-                activeEffectScope = currentEffectScope;
-            }
-        }
-        else {
-            warn$2(`cannot run an inactive effect scope.`);
-        }
-    }
-    /**
-     * This should only be called on non-detached scopes
-     * @internal
-     */
-    on() {
-        activeEffectScope = this;
-    }
-    /**
-     * This should only be called on non-detached scopes
-     * @internal
-     */
-    off() {
-        activeEffectScope = this.parent;
-    }
-    stop(fromParent) {
-        if (this.active) {
-            let i, l;
-            for (i = 0, l = this.effects.length; i < l; i++) {
-                this.effects[i].teardown();
-            }
-            for (i = 0, l = this.cleanups.length; i < l; i++) {
-                this.cleanups[i]();
-            }
-            if (this.scopes) {
-                for (i = 0, l = this.scopes.length; i < l; i++) {
-                    this.scopes[i].stop(true);
-                }
-            }
-            // nested scope, dereference from parent to avoid memory leaks
-            if (this.parent && !fromParent) {
-                // optimized O(1) removal
-                const last = this.parent.scopes.pop();
-                if (last && last !== this) {
-                    this.parent.scopes[this.index] = last;
-                    last.index = this.index;
-                }
-            }
-            this.active = false;
-        }
-    }
-}
-function effectScope(detached) {
-    return new EffectScope(detached);
-}
-/**
- * @internal
- */
-function recordEffectScope(effect, scope = activeEffectScope) {
-    if (scope && scope.active) {
-        scope.effects.push(effect);
-    }
-}
-function getCurrentScope() {
-    return activeEffectScope;
-}
-function onScopeDispose(fn) {
-    if (activeEffectScope) {
-        activeEffectScope.cleanups.push(fn);
-    }
-    else {
-        warn$2(`onScopeDispose() is called when there is no active effect scope` +
-            ` to be associated with.`);
-    }
-}
-
-let uid$1 = 0;
-function initMixin$1(Vue) {
-    Vue.prototype._init = function (options) {
-        const vm = this;
-        // a uid
-        vm._uid = uid$1++;
-        let startTag, endTag;
-        /* istanbul ignore if */
-        if (config.performance && mark) {
-            startTag = `vue-perf-start:${vm._uid}`;
-            endTag = `vue-perf-end:${vm._uid}`;
-            mark(startTag);
-        }
-        // a flag to mark this as a Vue instance without having to do instanceof
-        // check
-        vm._isVue = true;
-        // avoid instances from being observed
-        vm.__v_skip = true;
-        // effect scope
-        vm._scope = new EffectScope(true /* detached */);
-        // merge options
-        if (options && options._isComponent) {
-            // optimize internal component instantiation
-            // since dynamic options merging is pretty slow, and none of the
-            // internal component options needs special treatment.
-            initInternalComponent(vm, options);
-        }
-        else {
-            vm.$options = mergeOptions(resolveConstructorOptions(vm.constructor), options || {}, vm);
-        }
-        /* istanbul ignore else */
-        {
-            initProxy(vm);
-        }
-        // expose real self
-        vm._self = vm;
-        initLifecycle(vm);
-        initEvents(vm);
-        initRender(vm);
-        callHook$1(vm, 'beforeCreate');
-        initInjections(vm); // resolve injections before data/props
-        initState(vm);
-        initProvide(vm); // resolve provide after data/props
-        callHook$1(vm, 'created');
-        /* istanbul ignore if */
-        if (config.performance && mark) {
-            vm._name = formatComponentName(vm, false);
-            mark(endTag);
-            measure(`vue ${vm._name} init`, startTag, endTag);
-        }
-        if (vm.$options.el) {
-            vm.$mount(vm.$options.el);
-        }
-    };
-}
-function initInternalComponent(vm, options) {
-    const opts = (vm.$options = Object.create(vm.constructor.options));
-    // doing this because it's faster than dynamic enumeration.
-    const parentVnode = options._parentVnode;
-    opts.parent = options.parent;
-    opts._parentVnode = parentVnode;
-    const vnodeComponentOptions = parentVnode.componentOptions;
-    opts.propsData = vnodeComponentOptions.propsData;
-    opts._parentListeners = vnodeComponentOptions.listeners;
-    opts._renderChildren = vnodeComponentOptions.children;
-    opts._componentTag = vnodeComponentOptions.tag;
-    if (options.render) {
-        opts.render = options.render;
-        opts.staticRenderFns = options.staticRenderFns;
-    }
-}
-function resolveConstructorOptions(Ctor) {
-    let options = Ctor.options;
-    if (Ctor.super) {
-        const superOptions = resolveConstructorOptions(Ctor.super);
-        const cachedSuperOptions = Ctor.superOptions;
-        if (superOptions !== cachedSuperOptions) {
-            // super option changed,
-            // need to resolve new options.
-            Ctor.superOptions = superOptions;
-            // check if there are any late-modified/attached options (#4976)
-            const modifiedOptions = resolveModifiedOptions(Ctor);
-            // update base extend options
-            if (modifiedOptions) {
-                extend(Ctor.extendOptions, modifiedOptions);
-            }
-            options = Ctor.options = mergeOptions(superOptions, Ctor.extendOptions);
-            if (options.name) {
-                options.components[options.name] = Ctor;
-            }
-        }
-    }
-    return options;
-}
-function resolveModifiedOptions(Ctor) {
-    let modified;
-    const latest = Ctor.options;
-    const sealed = Ctor.sealedOptions;
-    for (const key in latest) {
-        if (latest[key] !== sealed[key]) {
-            if (!modified)
-                modified = {};
-            modified[key] = latest[key];
-        }
-    }
-    return modified;
-}
-
-/**
- * Runtime helper for resolving raw children VNodes into a slot object.
- */
-function resolveSlots(children, context) {
-    if (!children || !children.length) {
-        return {};
-    }
-    const slots = {};
-    for (let i = 0, l = children.length; i < l; i++) {
-        const child = children[i];
-        const data = child.data;
-        // remove slot attribute if the node is resolved as a Vue slot node
-        if (data && data.attrs && data.attrs.slot) {
-            delete data.attrs.slot;
-        }
-        // named slots should only be respected if the vnode was rendered in the
-        // same context.
-        if ((child.context === context || child.fnContext === context) &&
-            data &&
-            data.slot != null) {
-            const name = data.slot;
-            const slot = slots[name] || (slots[name] = []);
-            if (child.tag === 'template') {
-                slot.push.apply(slot, child.children || []);
-            }
-            else {
-                slot.push(child);
-            }
-        }
-        else {
-            (slots.default || (slots.default = [])).push(child);
-        }
-    }
-    // ignore slots that contains only whitespace
-    for (const name in slots) {
-        if (slots[name].every(isWhitespace)) {
-            delete slots[name];
-        }
-    }
-    return slots;
-}
-function isWhitespace(node) {
-    return (node.isComment && !node.asyncFactory) || node.text === ' ';
-}
-
-function isAsyncPlaceholder(node) {
-    // @ts-expect-error not really boolean type
-    return node.isComment && node.asyncFactory;
-}
-
-function normalizeScopedSlots(ownerVm, scopedSlots, normalSlots, prevScopedSlots) {
-    let res;
-    const hasNormalSlots = Object.keys(normalSlots).length > 0;
-    const isStable = scopedSlots ? !!scopedSlots.$stable : !hasNormalSlots;
-    const key = scopedSlots && scopedSlots.$key;
-    if (!scopedSlots) {
-        res = {};
-    }
-    else if (scopedSlots._normalized) {
-        // fast path 1: child component re-render only, parent did not change
-        return scopedSlots._normalized;
-    }
-    else if (isStable &&
-        prevScopedSlots &&
-        prevScopedSlots !== emptyObject &&
-        key === prevScopedSlots.$key &&
-        !hasNormalSlots &&
-        !prevScopedSlots.$hasNormal) {
-        // fast path 2: stable scoped slots w/ no normal slots to proxy,
-        // only need to normalize once
-        return prevScopedSlots;
-    }
-    else {
-        res = {};
-        for (const key in scopedSlots) {
-            if (scopedSlots[key] && key[0] !== '$') {
-                res[key] = normalizeScopedSlot(ownerVm, normalSlots, key, scopedSlots[key]);
-            }
-        }
-    }
-    // expose normal slots on scopedSlots
-    for (const key in normalSlots) {
-        if (!(key in res)) {
-            res[key] = proxyNormalSlot(normalSlots, key);
-        }
-    }
-    // avoriaz seems to mock a non-extensible $scopedSlots object
-    // and when that is passed down this would cause an error
-    if (scopedSlots && Object.isExtensible(scopedSlots)) {
-        scopedSlots._normalized = res;
-    }
-    def(res, '$stable', isStable);
-    def(res, '$key', key);
-    def(res, '$hasNormal', hasNormalSlots);
-    return res;
-}
-function normalizeScopedSlot(vm, normalSlots, key, fn) {
-    const normalized = function () {
-        const cur = currentInstance;
-        setCurrentInstance(vm);
-        let res = arguments.length ? fn.apply(null, arguments) : fn({});
-        res =
-            res && typeof res === 'object' && !isArray(res)
-                ? [res] // single vnode
-                : normalizeChildren(res);
-        const vnode = res && res[0];
-        setCurrentInstance(cur);
-        return res &&
-            (!vnode ||
-                (res.length === 1 && vnode.isComment && !isAsyncPlaceholder(vnode))) // #9658, #10391
-            ? undefined
-            : res;
-    };
-    // this is a slot using the new v-slot syntax without scope. although it is
-    // compiled as a scoped slot, render fn users would expect it to be present
-    // on this.$slots because the usage is semantically a normal slot.
-    if (fn.proxy) {
-        Object.defineProperty(normalSlots, key, {
-            get: normalized,
-            enumerable: true,
-            configurable: true
-        });
-    }
-    return normalized;
-}
-function proxyNormalSlot(slots, key) {
-    return () => slots[key];
-}
-
-/**
- * Runtime helper for rendering v-for lists.
- */
-function renderList(val, render) {
-    let ret = null, i, l, keys, key;
-    if (isArray(val) || typeof val === 'string') {
-        ret = new Array(val.length);
-        for (i = 0, l = val.length; i < l; i++) {
-            ret[i] = render(val[i], i);
-        }
-    }
-    else if (typeof val === 'number') {
-        ret = new Array(val);
-        for (i = 0; i < val; i++) {
-            ret[i] = render(i + 1, i);
-        }
-    }
-    else if (isObject(val)) {
-        if (hasSymbol && val[Symbol.iterator]) {
-            ret = [];
-            const iterator = val[Symbol.iterator]();
-            let result = iterator.next();
-            while (!result.done) {
-                ret.push(render(result.value, ret.length));
-                result = iterator.next();
-            }
-        }
-        else {
-            keys = Object.keys(val);
-            ret = new Array(keys.length);
-            for (i = 0, l = keys.length; i < l; i++) {
-                key = keys[i];
-                ret[i] = render(val[key], key, i);
-            }
-        }
-    }
-    if (!isDef(ret)) {
-        ret = [];
-    }
-    ret._isVList = true;
-    return ret;
-}
-
-/**
- * Runtime helper for rendering <slot>
- */
-function renderSlot(name, fallbackRender, props, bindObject) {
-    const scopedSlotFn = this.$scopedSlots[name];
-    let nodes;
-    if (scopedSlotFn) {
-        // scoped slot
-        props = props || {};
-        if (bindObject) {
-            if (!isObject(bindObject)) {
-                warn$2('slot v-bind without argument expects an Object', this);
-            }
-            props = extend(extend({}, bindObject), props);
-        }
-        nodes =
-            scopedSlotFn(props) ||
-                (isFunction(fallbackRender) ? fallbackRender() : fallbackRender);
-    }
-    else {
-        nodes =
-            this.$slots[name] ||
-                (isFunction(fallbackRender) ? fallbackRender() : fallbackRender);
-    }
-    const target = props && props.slot;
-    if (target) {
-        return this.$createElement('template', { slot: target }, nodes);
-    }
-    else {
-        return nodes;
-    }
-}
-
-/**
- * Runtime helper for resolving filters
- */
-function resolveFilter(id) {
-    return resolveAsset(this.$options, 'filters', id, true) || identity;
-}
-
-function isKeyNotMatch(expect, actual) {
-    if (isArray(expect)) {
-        return expect.indexOf(actual) === -1;
-    }
-    else {
-        return expect !== actual;
-    }
-}
-/**
- * Runtime helper for checking keyCodes from config.
- * exposed as Vue.prototype._k
- * passing in eventKeyName as last argument separately for backwards compat
- */
-function checkKeyCodes(eventKeyCode, key, builtInKeyCode, eventKeyName, builtInKeyName) {
-    const mappedKeyCode = config.keyCodes[key] || builtInKeyCode;
-    if (builtInKeyName && eventKeyName && !config.keyCodes[key]) {
-        return isKeyNotMatch(builtInKeyName, eventKeyName);
-    }
-    else if (mappedKeyCode) {
-        return isKeyNotMatch(mappedKeyCode, eventKeyCode);
-    }
-    else if (eventKeyName) {
-        return hyphenate(eventKeyName) !== key;
-    }
-    return eventKeyCode === undefined;
-}
-
-/**
- * Runtime helper for merging v-bind="object" into a VNode's data.
- */
-function bindObjectProps(data, tag, value, asProp, isSync) {
-    if (value) {
-        if (!isObject(value)) {
-            warn$2('v-bind without argument expects an Object or Array value', this);
-        }
-        else {
-            if (isArray(value)) {
-                value = toObject(value);
-            }
-            let hash;
-            for (const key in value) {
-                if (key === 'class' || key === 'style' || isReservedAttribute(key)) {
-                    hash = data;
-                }
-                else {
-                    const type = data.attrs && data.attrs.type;
-                    hash =
-                        asProp || config.mustUseProp(tag, type, key)
-                            ? data.domProps || (data.domProps = {})
-                            : data.attrs || (data.attrs = {});
-                }
-                const camelizedKey = camelize(key);
-                const hyphenatedKey = hyphenate(key);
-                if (!(camelizedKey in hash) && !(hyphenatedKey in hash)) {
-                    hash[key] = value[key];
-                    if (isSync) {
-                        const on = data.on || (data.on = {});
-                        on[`update:${key}`] = function ($event) {
-                            value[key] = $event;
-                        };
-                    }
-                }
-            }
-        }
-    }
-    return data;
-}
-
-/**
- * Runtime helper for rendering static trees.
- */
-function renderStatic(index, isInFor) {
-    const cached = this._staticTrees || (this._staticTrees = []);
-    let tree = cached[index];
-    // if has already-rendered static tree and not inside v-for,
-    // we can reuse the same tree.
-    if (tree && !isInFor) {
-        return tree;
-    }
-    // otherwise, render a fresh tree.
-    tree = cached[index] = this.$options.staticRenderFns[index].call(this._renderProxy, null, this // for render fns generated for functional component templates
-    );
-    markStatic$1(tree, `__static__${index}`, false);
-    return tree;
-}
-/**
- * Runtime helper for v-once.
- * Effectively it means marking the node as static with a unique key.
- */
-function markOnce(tree, index, key) {
-    markStatic$1(tree, `__once__${index}${key ? `_${key}` : ``}`, true);
-    return tree;
-}
-function markStatic$1(tree, key, isOnce) {
-    if (isArray(tree)) {
-        for (let i = 0; i < tree.length; i++) {
-            if (tree[i] && typeof tree[i] !== 'string') {
-                markStaticNode(tree[i], `${key}_${i}`, isOnce);
-            }
-        }
-    }
-    else {
-        markStaticNode(tree, key, isOnce);
-    }
-}
-function markStaticNode(node, key, isOnce) {
-    node.isStatic = true;
-    node.key = key;
-    node.isOnce = isOnce;
-}
-
-function bindObjectListeners(data, value) {
-    if (value) {
-        if (!isPlainObject(value)) {
-            warn$2('v-on without argument expects an Object value', this);
-        }
-        else {
-            const on = (data.on = data.on ? extend({}, data.on) : {});
-            for (const key in value) {
-                const existing = on[key];
-                const ours = value[key];
-                on[key] = existing ? [].concat(existing, ours) : ours;
-            }
-        }
-    }
-    return data;
-}
-
-function resolveScopedSlots(fns, res, 
-// the following are added in 2.6
-hasDynamicKeys, contentHashKey) {
-    res = res || { $stable: !hasDynamicKeys };
-    for (let i = 0; i < fns.length; i++) {
-        const slot = fns[i];
-        if (isArray(slot)) {
-            resolveScopedSlots(slot, res, hasDynamicKeys);
-        }
-        else if (slot) {
-            // marker for reverse proxying v-slot without scope on this.$slots
-            // @ts-expect-error
-            if (slot.proxy) {
-                // @ts-expect-error
-                slot.fn.proxy = true;
-            }
-            res[slot.key] = slot.fn;
-        }
-    }
-    if (contentHashKey) {
-        res.$key = contentHashKey;
-    }
-    return res;
-}
-
-// helper to process dynamic keys for dynamic arguments in v-bind and v-on.
-function bindDynamicKeys(baseObj, values) {
-    for (let i = 0; i < values.length; i += 2) {
-        const key = values[i];
-        if (typeof key === 'string' && key) {
-            baseObj[values[i]] = values[i + 1];
-        }
-        else if (key !== '' && key !== null) {
-            // null is a special value for explicitly removing a binding
-            warn$2(`Invalid value for dynamic directive argument (expected string or null): ${key}`, this);
-        }
-    }
-    return baseObj;
-}
-// helper to dynamically append modifier runtime markers to event names.
-// ensure only append when value is already string, otherwise it will be cast
-// to string and cause the type check to miss.
-function prependModifier(value, symbol) {
-    return typeof value === 'string' ? symbol + value : value;
-}
-
-function installRenderHelpers(target) {
-    target._o = markOnce;
-    target._n = toNumber;
-    target._s = toString;
-    target._l = renderList;
-    target._t = renderSlot;
-    target._q = looseEqual;
-    target._i = looseIndexOf;
-    target._m = renderStatic;
-    target._f = resolveFilter;
-    target._k = checkKeyCodes;
-    target._b = bindObjectProps;
-    target._v = createTextVNode;
-    target._e = createEmptyVNode;
-    target._u = resolveScopedSlots;
-    target._g = bindObjectListeners;
-    target._d = bindDynamicKeys;
-    target._p = prependModifier;
-}
-
-function FunctionalRenderContext(data, props, children, parent, Ctor) {
-    const options = Ctor.options;
-    // ensure the createElement function in functional components
-    // gets a unique context - this is necessary for correct named slot check
-    let contextVm;
-    if (hasOwn(parent, '_uid')) {
-        contextVm = Object.create(parent);
-        contextVm._original = parent;
-    }
-    else {
-        // the context vm passed in is a functional context as well.
-        // in this case we want to make sure we are able to get a hold to the
-        // real context instance.
-        contextVm = parent;
-        // @ts-ignore
-        parent = parent._original;
-    }
-    const isCompiled = isTrue(options._compiled);
-    const needNormalization = !isCompiled;
-    this.data = data;
-    this.props = props;
-    this.children = children;
-    this.parent = parent;
-    this.listeners = data.on || emptyObject;
-    this.injections = resolveInject(options.inject, parent);
-    this.slots = () => {
-        if (!this.$slots) {
-            normalizeScopedSlots(parent, data.scopedSlots, (this.$slots = resolveSlots(children, parent)));
-        }
-        return this.$slots;
-    };
-    Object.defineProperty(this, 'scopedSlots', {
-        enumerable: true,
-        get() {
-            return normalizeScopedSlots(parent, data.scopedSlots, this.slots());
-        }
-    });
-    // support for compiled functional template
-    if (isCompiled) {
-        // exposing $options for renderStatic()
-        this.$options = options;
-        // pre-resolve slots for renderSlot()
-        this.$slots = this.slots();
-        this.$scopedSlots = normalizeScopedSlots(parent, data.scopedSlots, this.$slots);
-    }
-    if (options._scopeId) {
-        this._c = (a, b, c, d) => {
-            const vnode = createElement$1(contextVm, a, b, c, d, needNormalization);
-            if (vnode && !isArray(vnode)) {
-                vnode.fnScopeId = options._scopeId;
-                vnode.fnContext = parent;
-            }
-            return vnode;
-        };
-    }
-    else {
-        this._c = (a, b, c, d) => createElement$1(contextVm, a, b, c, d, needNormalization);
-    }
-}
-installRenderHelpers(FunctionalRenderContext.prototype);
-function createFunctionalComponent(Ctor, propsData, data, contextVm, children) {
-    const options = Ctor.options;
-    const props = {};
-    const propOptions = options.props;
-    if (isDef(propOptions)) {
-        for (const key in propOptions) {
-            props[key] = validateProp(key, propOptions, propsData || emptyObject);
-        }
-    }
-    else {
-        if (isDef(data.attrs))
-            mergeProps(props, data.attrs);
-        if (isDef(data.props))
-            mergeProps(props, data.props);
-    }
-    const renderContext = new FunctionalRenderContext(data, props, children, contextVm, Ctor);
-    const vnode = options.render.call(null, renderContext._c, renderContext);
-    if (vnode instanceof VNode) {
-        return cloneAndMarkFunctionalResult(vnode, data, renderContext.parent, options, renderContext);
-    }
-    else if (isArray(vnode)) {
-        const vnodes = normalizeChildren(vnode) || [];
-        const res = new Array(vnodes.length);
-        for (let i = 0; i < vnodes.length; i++) {
-            res[i] = cloneAndMarkFunctionalResult(vnodes[i], data, renderContext.parent, options, renderContext);
-        }
-        return res;
-    }
-}
-function cloneAndMarkFunctionalResult(vnode, data, contextVm, options, renderContext) {
-    // #7817 clone node before setting fnContext, otherwise if the node is reused
-    // (e.g. it was from a cached normal slot) the fnContext causes named slots
-    // that should not be matched to match.
-    const clone = cloneVNode(vnode);
-    clone.fnContext = contextVm;
-    clone.fnOptions = options;
-    {
-        (clone.devtoolsMeta = clone.devtoolsMeta || {}).renderContext =
-            renderContext;
-    }
-    if (data.slot) {
-        (clone.data || (clone.data = {})).slot = data.slot;
-    }
-    return clone;
-}
-function mergeProps(to, from) {
-    for (const key in from) {
-        to[camelize(key)] = from[key];
-    }
-}
-
-// inline hooks to be invoked on component VNodes during patch
-const componentVNodeHooks = {
-    init(vnode, hydrating) {
-        if (vnode.componentInstance &&
-            !vnode.componentInstance._isDestroyed &&
-            vnode.data.keepAlive) {
-            // kept-alive components, treat as a patch
-            const mountedNode = vnode; // work around flow
-            componentVNodeHooks.prepatch(mountedNode, mountedNode);
-        }
-        else {
-            const child = (vnode.componentInstance = createComponentInstanceForVnode(vnode, activeInstance));
-            child.$mount(hydrating ? vnode.elm : undefined, hydrating);
-        }
-    },
-    prepatch(oldVnode, vnode) {
-        const options = vnode.componentOptions;
-        const child = (vnode.componentInstance = oldVnode.componentInstance);
-        updateChildComponent(child, options.propsData, // updated props
-        options.listeners, // updated listeners
-        vnode, // new parent vnode
-        options.children // new children
-        );
-    },
-    insert(vnode) {
-        const { context, componentInstance } = vnode;
-        if (!componentInstance._isMounted) {
-            componentInstance._isMounted = true;
-            callHook$1(componentInstance, 'mounted');
-        }
-        if (vnode.data.keepAlive) {
-            if (context._isMounted) {
-                // vue-router#1212
-                // During updates, a kept-alive component's child components may
-                // change, so directly walking the tree here may call activated hooks
-                // on incorrect children. Instead we push them into a queue which will
-                // be processed after the whole patch process ended.
-                queueActivatedComponent(componentInstance);
-            }
-            else {
-                activateChildComponent(componentInstance, true /* direct */);
-            }
-        }
-    },
-    destroy(vnode) {
-        const { componentInstance } = vnode;
-        if (!componentInstance._isDestroyed) {
-            if (!vnode.data.keepAlive) {
-                componentInstance.$destroy();
-            }
-            else {
-                deactivateChildComponent(componentInstance, true /* direct */);
-            }
-        }
-    }
-};
-const hooksToMerge = Object.keys(componentVNodeHooks);
-function createComponent(Ctor, data, context, children, tag) {
-    if (isUndef(Ctor)) {
-        return;
-    }
-    const baseCtor = context.$options._base;
-    // plain options object: turn it into a constructor
-    if (isObject(Ctor)) {
-        Ctor = baseCtor.extend(Ctor);
-    }
-    // if at this stage it's not a constructor or an async component factory,
-    // reject.
-    if (typeof Ctor !== 'function') {
-        {
-            warn$2(`Invalid Component definition: ${String(Ctor)}`, context);
-        }
-        return;
-    }
-    // async component
-    let asyncFactory;
-    // @ts-expect-error
-    if (isUndef(Ctor.cid)) {
-        asyncFactory = Ctor;
-        Ctor = resolveAsyncComponent(asyncFactory, baseCtor);
-        if (Ctor === undefined) {
-            // return a placeholder node for async component, which is rendered
-            // as a comment node but preserves all the raw information for the node.
-            // the information will be used for async server-rendering and hydration.
-            return createAsyncPlaceholder(asyncFactory, data, context, children, tag);
-        }
-    }
-    data = data || {};
-    // resolve constructor options in case global mixins are applied after
-    // component constructor creation
-    resolveConstructorOptions(Ctor);
-    // transform component v-model data into props & events
-    if (isDef(data.model)) {
-        // @ts-expect-error
-        transformModel(Ctor.options, data);
-    }
-    // extract props
-    // @ts-expect-error
-    const propsData = extractPropsFromVNodeData(data, Ctor, tag);
-    // functional component
-    // @ts-expect-error
-    if (isTrue(Ctor.options.functional)) {
-        return createFunctionalComponent(Ctor, propsData, data, context, children);
-    }
-    // extract listeners, since these needs to be treated as
-    // child component listeners instead of DOM listeners
-    const listeners = data.on;
-    // replace with listeners with .native modifier
-    // so it gets processed during parent component patch.
-    data.on = data.nativeOn;
-    // @ts-expect-error
-    if (isTrue(Ctor.options.abstract)) {
-        // abstract components do not keep anything
-        // other than props & listeners & slot
-        // work around flow
-        const slot = data.slot;
-        data = {};
-        if (slot) {
-            data.slot = slot;
-        }
-    }
-    // install component management hooks onto the placeholder node
-    installComponentHooks(data);
-    // return a placeholder vnode
-    // @ts-expect-error
-    const name = Ctor.options.name || tag;
-    const vnode = new VNode(
-    // @ts-expect-error
-    `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`, data, undefined, undefined, undefined, context, 
-    // @ts-expect-error
-    { Ctor, propsData, listeners, tag, children }, asyncFactory);
-    return vnode;
-}
-function createComponentInstanceForVnode(
-// we know it's MountedComponentVNode but flow doesn't
-vnode, 
-// activeInstance in lifecycle state
-parent) {
-    const options = {
-        _isComponent: true,
-        _parentVnode: vnode,
-        parent
-    };
-    // check inline-template render functions
-    const inlineTemplate = vnode.data.inlineTemplate;
-    if (isDef(inlineTemplate)) {
-        options.render = inlineTemplate.render;
-        options.staticRenderFns = inlineTemplate.staticRenderFns;
-    }
-    return new vnode.componentOptions.Ctor(options);
-}
-function installComponentHooks(data) {
-    const hooks = data.hook || (data.hook = {});
-    for (let i = 0; i < hooksToMerge.length; i++) {
-        const key = hooksToMerge[i];
-        const existing = hooks[key];
-        const toMerge = componentVNodeHooks[key];
-        // @ts-expect-error
-        if (existing !== toMerge && !(existing && existing._merged)) {
-            hooks[key] = existing ? mergeHook(toMerge, existing) : toMerge;
-        }
-    }
-}
-function mergeHook(f1, f2) {
-    const merged = (a, b) => {
-        // flow complains about extra args which is why we use any
-        f1(a, b);
-        f2(a, b);
-    };
-    merged._merged = true;
-    return merged;
-}
-// transform component v-model info (value and callback) into
-// prop and event handler respectively.
-function transformModel(options, data) {
-    const prop = (options.model && options.model.prop) || 'value';
-    const event = (options.model && options.model.event) || 'input';
-    (data.attrs || (data.attrs = {}))[prop] = data.model.value;
-    const on = data.on || (data.on = {});
-    const existing = on[event];
-    const callback = data.model.callback;
-    if (isDef(existing)) {
-        if (isArray(existing)
-            ? existing.indexOf(callback) === -1
-            : existing !== callback) {
-            on[event] = [callback].concat(existing);
-        }
-    }
-    else {
-        on[event] = callback;
-    }
-}
-
-const SIMPLE_NORMALIZE = 1;
-const ALWAYS_NORMALIZE = 2;
-// wrapper function for providing a more flexible interface
-// without getting yelled at by flow
-function createElement$1(context, tag, data, children, normalizationType, alwaysNormalize) {
-    if (isArray(data) || isPrimitive(data)) {
-        normalizationType = children;
-        children = data;
-        data = undefined;
-    }
-    if (isTrue(alwaysNormalize)) {
-        normalizationType = ALWAYS_NORMALIZE;
-    }
-    return _createElement(context, tag, data, children, normalizationType);
-}
-function _createElement(context, tag, data, children, normalizationType) {
-    if (isDef(data) && isDef(data.__ob__)) {
-        warn$2(`Avoid using observed data object as vnode data: ${JSON.stringify(data)}\n` + 'Always create fresh vnode data objects in each render!', context);
-        return createEmptyVNode();
-    }
-    // object syntax in v-bind
-    if (isDef(data) && isDef(data.is)) {
-        tag = data.is;
-    }
-    if (!tag) {
-        // in case of component :is set to falsy value
-        return createEmptyVNode();
-    }
-    // warn against non-primitive key
-    if (isDef(data) && isDef(data.key) && !isPrimitive(data.key)) {
-        warn$2('Avoid using non-primitive value as key, ' +
-            'use string/number value instead.', context);
-    }
-    // support single function children as default scoped slot
-    if (isArray(children) && isFunction(children[0])) {
-        data = data || {};
-        data.scopedSlots = { default: children[0] };
-        children.length = 0;
-    }
-    if (normalizationType === ALWAYS_NORMALIZE) {
-        children = normalizeChildren(children);
-    }
-    else if (normalizationType === SIMPLE_NORMALIZE) {
-        children = simpleNormalizeChildren(children);
-    }
-    let vnode, ns;
-    if (typeof tag === 'string') {
-        let Ctor;
-        ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag);
-        if (config.isReservedTag(tag)) {
-            // platform built-in elements
-            if (isDef(data) &&
-                isDef(data.nativeOn) &&
-                data.tag !== 'component') {
-                warn$2(`The .native modifier for v-on is only valid on components but it was used on <${tag}>.`, context);
-            }
-            vnode = new VNode(config.parsePlatformTagName(tag), data, children, undefined, undefined, context);
-        }
-        else if ((!data || !data.pre) &&
-            isDef((Ctor = resolveAsset(context.$options, 'components', tag)))) {
-            // component
-            vnode = createComponent(Ctor, data, context, children, tag);
-        }
-        else {
-            // unknown or unlisted namespaced elements
-            // check at runtime because it may get assigned a namespace when its
-            // parent normalizes children
-            vnode = new VNode(tag, data, children, undefined, undefined, context);
-        }
-    }
-    else {
-        // direct component options / constructor
-        vnode = createComponent(tag, data, context, children);
-    }
-    if (isArray(vnode)) {
-        return vnode;
-    }
-    else if (isDef(vnode)) {
-        if (isDef(ns))
-            applyNS(vnode, ns);
-        if (isDef(data))
-            registerDeepBindings(data);
-        return vnode;
-    }
-    else {
-        return createEmptyVNode();
-    }
-}
-function applyNS(vnode, ns, force) {
-    vnode.ns = ns;
-    if (vnode.tag === 'foreignObject') {
-        // use default namespace inside foreignObject
-        ns = undefined;
-        force = true;
-    }
-    if (isDef(vnode.children)) {
-        for (let i = 0, l = vnode.children.length; i < l; i++) {
-            const child = vnode.children[i];
-            if (isDef(child.tag) &&
-                (isUndef(child.ns) || (isTrue(force) && child.tag !== 'svg'))) {
-                applyNS(child, ns, force);
-            }
-        }
-    }
-}
-// ref #5318
-// necessary to ensure parent re-render when deep bindings like :style and
-// :class are used on slot nodes
-function registerDeepBindings(data) {
-    if (isObject(data.style)) {
-        traverse(data.style);
-    }
-    if (isObject(data.class)) {
-        traverse(data.class);
-    }
-}
-
 function initRender(vm) {
     vm._vnode = null; // the root of the child tree
     vm._staticTrees = null; // v-once cached trees
@@ -40716,7 +40008,9 @@ function initRender(vm) {
     const parentVnode = (vm.$vnode = options._parentVnode); // the placeholder node in parent tree
     const renderContext = parentVnode && parentVnode.context;
     vm.$slots = resolveSlots(options._renderChildren, renderContext);
-    vm.$scopedSlots = emptyObject;
+    vm.$scopedSlots = parentVnode
+        ? normalizeScopedSlots(vm.$parent, parentVnode.data.scopedSlots, vm.$slots)
+        : emptyObject;
     // bind the createElement fn to this instance
     // so that we get proper render context inside it.
     // args order: tag, data, children, normalizationType, alwaysNormalize
@@ -40750,7 +40044,7 @@ function renderMixin(Vue) {
     Vue.prototype._render = function () {
         const vm = this;
         const { render, _parentVnode } = vm.$options;
-        if (_parentVnode) {
+        if (_parentVnode && vm._isMounted) {
             vm.$scopedSlots = normalizeScopedSlots(vm.$parent, _parentVnode.data.scopedSlots, vm.$slots, vm.$scopedSlots);
             if (vm._slotsProxy) {
                 syncSetupSlots(vm._slotsProxy, vm.$scopedSlots);
@@ -41345,11 +40639,11 @@ function deactivateChildComponent(vm, direct) {
         callHook$1(vm, 'deactivated');
     }
 }
-function callHook$1(vm, hook, args) {
+function callHook$1(vm, hook, args, setContext = true) {
     // #7573 disable dep collection when invoking lifecycle hooks
     pushTarget();
     const prev = currentInstance;
-    setCurrentInstance(vm);
+    setContext && setCurrentInstance(vm);
     const handlers = vm.$options[hook];
     const info = `${hook} hook`;
     if (handlers) {
@@ -41360,7 +40654,7 @@ function callHook$1(vm, hook, args) {
     if (vm._hasHookEvent) {
         vm.$emit('hook:' + hook);
     }
-    setCurrentInstance(prev);
+    setContext && setCurrentInstance(prev);
     popTarget();
 }
 
@@ -41409,6 +40703,16 @@ if (inBrowser && !isIE) {
         getNow = () => performance.now();
     }
 }
+const sortCompareFn = (a, b) => {
+    if (a.post) {
+        if (!b.post)
+            return 1;
+    }
+    else if (b.post) {
+        return -1;
+    }
+    return a.id - b.id;
+};
 /**
  * Flush both queues and run the watchers.
  */
@@ -41424,7 +40728,7 @@ function flushSchedulerQueue() {
     //    user watchers are created before the render watcher)
     // 3. If a component is destroyed during a parent component's watcher run,
     //    its watchers can be skipped.
-    queue.sort((a, b) => a.id - b.id);
+    queue.sort(sortCompareFn);
     // do not cache length because more watchers might be pushed
     // as we run existing watchers
     for (index$1 = 0; index$1 < queue.length; index$1++) {
@@ -41523,258 +40827,6 @@ function queueWatcher(watcher) {
     }
 }
 
-let uid = 0;
-/**
- * A watcher parses an expression, collects dependencies,
- * and fires callback when the expression value changes.
- * This is used for both the $watch() api and directives.
- * @internal
- */
-class Watcher {
-    constructor(vm, expOrFn, cb, options, isRenderWatcher) {
-        recordEffectScope(this, activeEffectScope || (vm ? vm._scope : undefined));
-        if ((this.vm = vm)) {
-            if (isRenderWatcher) {
-                vm._watcher = this;
-            }
-        }
-        // options
-        if (options) {
-            this.deep = !!options.deep;
-            this.user = !!options.user;
-            this.lazy = !!options.lazy;
-            this.sync = !!options.sync;
-            this.before = options.before;
-            {
-                this.onTrack = options.onTrack;
-                this.onTrigger = options.onTrigger;
-            }
-        }
-        else {
-            this.deep = this.user = this.lazy = this.sync = false;
-        }
-        this.cb = cb;
-        this.id = ++uid; // uid for batching
-        this.active = true;
-        this.dirty = this.lazy; // for lazy watchers
-        this.deps = [];
-        this.newDeps = [];
-        this.depIds = new _Set();
-        this.newDepIds = new _Set();
-        this.expression = expOrFn.toString() ;
-        // parse expression for getter
-        if (isFunction(expOrFn)) {
-            this.getter = expOrFn;
-        }
-        else {
-            this.getter = parsePath(expOrFn);
-            if (!this.getter) {
-                this.getter = noop;
-                warn$2(`Failed watching path: "${expOrFn}" ` +
-                        'Watcher only accepts simple dot-delimited paths. ' +
-                        'For full control, use a function instead.', vm);
-            }
-        }
-        this.value = this.lazy ? undefined : this.get();
-    }
-    /**
-     * Evaluate the getter, and re-collect dependencies.
-     */
-    get() {
-        pushTarget(this);
-        let value;
-        const vm = this.vm;
-        try {
-            value = this.getter.call(vm, vm);
-        }
-        catch (e) {
-            if (this.user) {
-                handleError(e, vm, `getter for watcher "${this.expression}"`);
-            }
-            else {
-                throw e;
-            }
-        }
-        finally {
-            // "touch" every property so they are all tracked as
-            // dependencies for deep watching
-            if (this.deep) {
-                traverse(value);
-            }
-            popTarget();
-            this.cleanupDeps();
-        }
-        return value;
-    }
-    /**
-     * Add a dependency to this directive.
-     */
-    addDep(dep) {
-        const id = dep.id;
-        if (!this.newDepIds.has(id)) {
-            this.newDepIds.add(id);
-            this.newDeps.push(dep);
-            if (!this.depIds.has(id)) {
-                dep.addSub(this);
-            }
-        }
-    }
-    /**
-     * Clean up for dependency collection.
-     */
-    cleanupDeps() {
-        let i = this.deps.length;
-        while (i--) {
-            const dep = this.deps[i];
-            if (!this.newDepIds.has(dep.id)) {
-                dep.removeSub(this);
-            }
-        }
-        let tmp = this.depIds;
-        this.depIds = this.newDepIds;
-        this.newDepIds = tmp;
-        this.newDepIds.clear();
-        tmp = this.deps;
-        this.deps = this.newDeps;
-        this.newDeps = tmp;
-        this.newDeps.length = 0;
-    }
-    /**
-     * Subscriber interface.
-     * Will be called when a dependency changes.
-     */
-    update() {
-        /* istanbul ignore else */
-        if (this.lazy) {
-            this.dirty = true;
-        }
-        else if (this.sync) {
-            this.run();
-        }
-        else {
-            queueWatcher(this);
-        }
-    }
-    /**
-     * Scheduler job interface.
-     * Will be called by the scheduler.
-     */
-    run() {
-        if (this.active) {
-            const value = this.get();
-            if (value !== this.value ||
-                // Deep watchers and watchers on Object/Arrays should fire even
-                // when the value is the same, because the value may
-                // have mutated.
-                isObject(value) ||
-                this.deep) {
-                // set new value
-                const oldValue = this.value;
-                this.value = value;
-                if (this.user) {
-                    const info = `callback for watcher "${this.expression}"`;
-                    invokeWithErrorHandling(this.cb, this.vm, [value, oldValue], this.vm, info);
-                }
-                else {
-                    this.cb.call(this.vm, value, oldValue);
-                }
-            }
-        }
-    }
-    /**
-     * Evaluate the value of the watcher.
-     * This only gets called for lazy watchers.
-     */
-    evaluate() {
-        this.value = this.get();
-        this.dirty = false;
-    }
-    /**
-     * Depend on all deps collected by this watcher.
-     */
-    depend() {
-        let i = this.deps.length;
-        while (i--) {
-            this.deps[i].depend();
-        }
-    }
-    /**
-     * Remove self from all dependencies' subscriber list.
-     */
-    teardown() {
-        if (this.vm && !this.vm._isBeingDestroyed) {
-            remove$2(this.vm._scope.effects, this);
-        }
-        if (this.active) {
-            let i = this.deps.length;
-            while (i--) {
-                this.deps[i].removeSub(this);
-            }
-            this.active = false;
-            if (this.onStop) {
-                this.onStop();
-            }
-        }
-    }
-}
-
-function computed(getterOrOptions, debugOptions) {
-    let getter;
-    let setter;
-    const onlyGetter = isFunction(getterOrOptions);
-    if (onlyGetter) {
-        getter = getterOrOptions;
-        setter = () => {
-                warn$2('Write operation failed: computed value is readonly');
-            }
-            ;
-    }
-    else {
-        getter = getterOrOptions.get;
-        setter = getterOrOptions.set;
-    }
-    const watcher = isServerRendering()
-        ? null
-        : new Watcher(currentInstance, getter, noop, { lazy: true });
-    if (watcher && debugOptions) {
-        watcher.onTrack = debugOptions.onTrack;
-        watcher.onTrigger = debugOptions.onTrigger;
-    }
-    const ref = {
-        // some libs rely on the presence effect for checking computed refs
-        // from normal refs, but the implementation doesn't matter
-        effect: watcher,
-        get value() {
-            if (watcher) {
-                if (watcher.dirty) {
-                    watcher.evaluate();
-                }
-                if (Dep.target) {
-                    if (Dep.target.onTrack) {
-                        Dep.target.onTrack({
-                            effect: Dep.target,
-                            target: ref,
-                            type: "get" /* TrackOpTypes.GET */,
-                            key: 'value'
-                        });
-                    }
-                    watcher.depend();
-                }
-                return watcher.value;
-            }
-            else {
-                return getter();
-            }
-        },
-        set value(newVal) {
-            setter(newVal);
-        }
-    };
-    def(ref, RefFlag, true);
-    def(ref, "__v_isReadonly" /* ReactiveFlags.IS_READONLY */, onlyGetter);
-    return ref;
-}
-
 const WATCHER = `watcher`;
 const WATCHER_CB = `${WATCHER} callback`;
 const WATCHER_GETTER = `${WATCHER} getter`;
@@ -41825,12 +40877,10 @@ function doWatch(source, cb, { immediate, deep, flush = 'pre', onTrack, onTrigge
         forceTrigger = isShallow(source);
     }
     else if (isReactive(source)) {
-        getter = isArray(source)
-            ? () => {
-                source.__ob__.dep.depend();
-                return source;
-            }
-            : () => source;
+        getter = () => {
+            source.__ob__.dep.depend();
+            return source;
+        };
         deep = true;
     }
     else if (isArray(source)) {
@@ -41941,14 +40991,14 @@ function doWatch(source, cb, { immediate, deep, flush = 'pre', onTrack, onTrigge
         watcher.update = watcher.run;
     }
     else if (flush === 'post') {
-        watcher.id = Infinity;
+        watcher.post = true;
         watcher.update = () => queueWatcher(watcher);
     }
     else {
         // pre
         watcher.update = () => {
-            if (instance && instance === currentInstance) {
-                // pre-watcher triggered inside setup()
+            if (instance && instance === currentInstance && !instance._isMounted) {
+                // pre-watcher triggered before
                 const buffer = instance._preWatchers || (instance._preWatchers = []);
                 if (buffer.indexOf(watcher) < 0)
                     buffer.push(watcher);
@@ -41980,6 +41030,160 @@ function doWatch(source, cb, { immediate, deep, flush = 'pre', onTrack, onTrigge
     return () => {
         watcher.teardown();
     };
+}
+
+let activeEffectScope;
+class EffectScope {
+    constructor(detached = false) {
+        /**
+         * @internal
+         */
+        this.active = true;
+        /**
+         * @internal
+         */
+        this.effects = [];
+        /**
+         * @internal
+         */
+        this.cleanups = [];
+        if (!detached && activeEffectScope) {
+            this.parent = activeEffectScope;
+            this.index =
+                (activeEffectScope.scopes || (activeEffectScope.scopes = [])).push(this) - 1;
+        }
+    }
+    run(fn) {
+        if (this.active) {
+            const currentEffectScope = activeEffectScope;
+            try {
+                activeEffectScope = this;
+                return fn();
+            }
+            finally {
+                activeEffectScope = currentEffectScope;
+            }
+        }
+        else {
+            warn$2(`cannot run an inactive effect scope.`);
+        }
+    }
+    /**
+     * This should only be called on non-detached scopes
+     * @internal
+     */
+    on() {
+        activeEffectScope = this;
+    }
+    /**
+     * This should only be called on non-detached scopes
+     * @internal
+     */
+    off() {
+        activeEffectScope = this.parent;
+    }
+    stop(fromParent) {
+        if (this.active) {
+            let i, l;
+            for (i = 0, l = this.effects.length; i < l; i++) {
+                this.effects[i].teardown();
+            }
+            for (i = 0, l = this.cleanups.length; i < l; i++) {
+                this.cleanups[i]();
+            }
+            if (this.scopes) {
+                for (i = 0, l = this.scopes.length; i < l; i++) {
+                    this.scopes[i].stop(true);
+                }
+            }
+            // nested scope, dereference from parent to avoid memory leaks
+            if (this.parent && !fromParent) {
+                // optimized O(1) removal
+                const last = this.parent.scopes.pop();
+                if (last && last !== this) {
+                    this.parent.scopes[this.index] = last;
+                    last.index = this.index;
+                }
+            }
+            this.active = false;
+        }
+    }
+}
+function effectScope(detached) {
+    return new EffectScope(detached);
+}
+/**
+ * @internal
+ */
+function recordEffectScope(effect, scope = activeEffectScope) {
+    if (scope && scope.active) {
+        scope.effects.push(effect);
+    }
+}
+function getCurrentScope() {
+    return activeEffectScope;
+}
+function onScopeDispose(fn) {
+    if (activeEffectScope) {
+        activeEffectScope.cleanups.push(fn);
+    }
+    else {
+        warn$2(`onScopeDispose() is called when there is no active effect scope` +
+            ` to be associated with.`);
+    }
+}
+
+function provide(key, value) {
+    if (!currentInstance) {
+        {
+            warn$2(`provide() can only be used inside setup().`);
+        }
+    }
+    else {
+        // TS doesn't allow symbol as index type
+        resolveProvided(currentInstance)[key] = value;
+    }
+}
+function resolveProvided(vm) {
+    // by default an instance inherits its parent's provides object
+    // but when it needs to provide values of its own, it creates its
+    // own provides object using parent provides object as prototype.
+    // this way in `inject` we can simply look up injections from direct
+    // parent and let the prototype chain do the work.
+    const existing = vm._provided;
+    const parentProvides = vm.$parent && vm.$parent._provided;
+    if (parentProvides === existing) {
+        return (vm._provided = Object.create(parentProvides));
+    }
+    else {
+        return existing;
+    }
+}
+function inject(key, defaultValue, treatDefaultAsFactory = false) {
+    // fallback to `currentRenderingInstance` so that this can be called in
+    // a functional component
+    const instance = currentInstance;
+    if (instance) {
+        // #2400
+        // to support `app.use` plugins,
+        // fallback to appContext's `provides` if the instance is at root
+        const provides = instance.$parent && instance.$parent._provided;
+        if (provides && key in provides) {
+            // TS doesn't allow symbol as index type
+            return provides[key];
+        }
+        else if (arguments.length > 1) {
+            return treatDefaultAsFactory && isFunction(defaultValue)
+                ? defaultValue.call(instance)
+                : defaultValue;
+        }
+        else {
+            warn$2(`injection "${String(key)}" not found.`);
+        }
+    }
+    else {
+        warn$2(`inject() can only be used inside setup() or functional components.`);
+    }
 }
 
 /**
@@ -42214,6 +41418,77 @@ function useCssVars(getter) {
     });
 }
 
+/**
+ * v3-compatible async component API.
+ * @internal the type is manually declared in <root>/types/v3-define-async-component.d.ts
+ * because it relies on existing manual types
+ */
+function defineAsyncComponent(source) {
+    if (isFunction(source)) {
+        source = { loader: source };
+    }
+    const { loader, loadingComponent, errorComponent, delay = 200, timeout, // undefined = never times out
+    suspensible = false, // in Vue 3 default is true
+    onError: userOnError } = source;
+    if (suspensible) {
+        warn$2(`The suspensiblbe option for async components is not supported in Vue2. It is ignored.`);
+    }
+    let pendingRequest = null;
+    let retries = 0;
+    const retry = () => {
+        retries++;
+        pendingRequest = null;
+        return load();
+    };
+    const load = () => {
+        let thisRequest;
+        return (pendingRequest ||
+            (thisRequest = pendingRequest =
+                loader()
+                    .catch(err => {
+                    err = err instanceof Error ? err : new Error(String(err));
+                    if (userOnError) {
+                        return new Promise((resolve, reject) => {
+                            const userRetry = () => resolve(retry());
+                            const userFail = () => reject(err);
+                            userOnError(err, userRetry, userFail, retries + 1);
+                        });
+                    }
+                    else {
+                        throw err;
+                    }
+                })
+                    .then((comp) => {
+                    if (thisRequest !== pendingRequest && pendingRequest) {
+                        return pendingRequest;
+                    }
+                    if (!comp) {
+                        warn$2(`Async component loader resolved to undefined. ` +
+                            `If you are using retry(), make sure to return its return value.`);
+                    }
+                    // interop module default
+                    if (comp &&
+                        (comp.__esModule || comp[Symbol.toStringTag] === 'Module')) {
+                        comp = comp.default;
+                    }
+                    if (comp && !isObject(comp) && !isFunction(comp)) {
+                        throw new Error(`Invalid async component load result: ${comp}`);
+                    }
+                    return comp;
+                })));
+    };
+    return () => {
+        const component = load();
+        return {
+            component,
+            delay,
+            timeout,
+            error: errorComponent,
+            loading: loadingComponent
+        };
+    };
+}
+
 function createLifeCycle(hookName) {
     return (fn, target = currentInstance) => {
         if (!target) {
@@ -42251,7 +41526,10 @@ const onServerPrefetch = createLifeCycle('serverPrefetch');
 const onRenderTracked = createLifeCycle('renderTracked');
 const onRenderTriggered = createLifeCycle('renderTriggered');
 
-const version = '2.7.1';
+/**
+ * Note: also update dist/vue.runtime.mjs when adding new exports to this file.
+ */
+const version = '2.7.7';
 /**
  * @internal type is manually declared in <root>/types/v3-define-component.d.ts
  */
@@ -42303,6 +41581,7 @@ var vca = /*#__PURE__*/Object.freeze({
   del: del,
   useCssModule: useCssModule,
   useCssVars: useCssVars,
+  defineAsyncComponent: defineAsyncComponent,
   onBeforeMount: onBeforeMount,
   onMounted: onMounted,
   onBeforeUpdate: onBeforeUpdate,
@@ -42317,270 +41596,1098 @@ var vca = /*#__PURE__*/Object.freeze({
   onRenderTriggered: onRenderTriggered
 });
 
-const arrayKeys = Object.getOwnPropertyNames(arrayMethods);
-const NO_INIITIAL_VALUE = {};
+const seenObjects = new _Set();
 /**
- * In some cases we may want to disable observation inside a component's
- * update computation.
+ * Recursively traverse an object to evoke all converted
+ * getters, so that every nested property inside the object
+ * is collected as a "deep" dependency.
  */
-let shouldObserve = true;
-function toggleObserving(value) {
-    shouldObserve = value;
+function traverse(val) {
+    _traverse(val, seenObjects);
+    seenObjects.clear();
+    return val;
 }
+function _traverse(val, seen) {
+    let i, keys;
+    const isA = isArray(val);
+    if ((!isA && !isObject(val)) ||
+        Object.isFrozen(val) ||
+        val instanceof VNode) {
+        return;
+    }
+    if (val.__ob__) {
+        const depId = val.__ob__.dep.id;
+        if (seen.has(depId)) {
+            return;
+        }
+        seen.add(depId);
+    }
+    if (isA) {
+        i = val.length;
+        while (i--)
+            _traverse(val[i], seen);
+    }
+    else if (isRef(val)) {
+        _traverse(val.value, seen);
+    }
+    else {
+        keys = Object.keys(val);
+        i = keys.length;
+        while (i--)
+            _traverse(val[keys[i]], seen);
+    }
+}
+
+let uid$1 = 0;
 /**
- * Observer class that is attached to each observed
- * object. Once attached, the observer converts the target
- * object's property keys into getter/setters that
- * collect dependencies and dispatch updates.
+ * A watcher parses an expression, collects dependencies,
+ * and fires callback when the expression value changes.
+ * This is used for both the $watch() api and directives.
+ * @internal
  */
-class Observer {
-    constructor(value, shallow = false) {
-        this.value = value;
-        this.shallow = shallow;
-        // this.value = value
-        this.dep = new Dep();
-        this.vmCount = 0;
-        def(value, '__ob__', this);
-        if (isArray(value)) {
-            if (hasProto) {
-                protoAugment(value, arrayMethods);
+class Watcher {
+    constructor(vm, expOrFn, cb, options, isRenderWatcher) {
+        recordEffectScope(this, activeEffectScope || (vm ? vm._scope : undefined));
+        if ((this.vm = vm)) {
+            if (isRenderWatcher) {
+                vm._watcher = this;
             }
-            else {
-                copyAugment(value, arrayMethods, arrayKeys);
-            }
-            if (!shallow) {
-                this.observeArray(value);
+        }
+        // options
+        if (options) {
+            this.deep = !!options.deep;
+            this.user = !!options.user;
+            this.lazy = !!options.lazy;
+            this.sync = !!options.sync;
+            this.before = options.before;
+            {
+                this.onTrack = options.onTrack;
+                this.onTrigger = options.onTrigger;
             }
         }
         else {
-            this.walk(value, shallow);
+            this.deep = this.user = this.lazy = this.sync = false;
+        }
+        this.cb = cb;
+        this.id = ++uid$1; // uid for batching
+        this.active = true;
+        this.post = false;
+        this.dirty = this.lazy; // for lazy watchers
+        this.deps = [];
+        this.newDeps = [];
+        this.depIds = new _Set();
+        this.newDepIds = new _Set();
+        this.expression = expOrFn.toString() ;
+        // parse expression for getter
+        if (isFunction(expOrFn)) {
+            this.getter = expOrFn;
+        }
+        else {
+            this.getter = parsePath(expOrFn);
+            if (!this.getter) {
+                this.getter = noop;
+                warn$2(`Failed watching path: "${expOrFn}" ` +
+                        'Watcher only accepts simple dot-delimited paths. ' +
+                        'For full control, use a function instead.', vm);
+            }
+        }
+        this.value = this.lazy ? undefined : this.get();
+    }
+    /**
+     * Evaluate the getter, and re-collect dependencies.
+     */
+    get() {
+        pushTarget(this);
+        let value;
+        const vm = this.vm;
+        try {
+            value = this.getter.call(vm, vm);
+        }
+        catch (e) {
+            if (this.user) {
+                handleError(e, vm, `getter for watcher "${this.expression}"`);
+            }
+            else {
+                throw e;
+            }
+        }
+        finally {
+            // "touch" every property so they are all tracked as
+            // dependencies for deep watching
+            if (this.deep) {
+                traverse(value);
+            }
+            popTarget();
+            this.cleanupDeps();
+        }
+        return value;
+    }
+    /**
+     * Add a dependency to this directive.
+     */
+    addDep(dep) {
+        const id = dep.id;
+        if (!this.newDepIds.has(id)) {
+            this.newDepIds.add(id);
+            this.newDeps.push(dep);
+            if (!this.depIds.has(id)) {
+                dep.addSub(this);
+            }
         }
     }
     /**
-     * Walk through all properties and convert them into
-     * getter/setters. This method should only be called when
-     * value type is Object.
+     * Clean up for dependency collection.
      */
-    walk(obj, shallow) {
-        const keys = Object.keys(obj);
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i];
-            defineReactive(obj, key, NO_INIITIAL_VALUE, undefined, shallow);
+    cleanupDeps() {
+        let i = this.deps.length;
+        while (i--) {
+            const dep = this.deps[i];
+            if (!this.newDepIds.has(dep.id)) {
+                dep.removeSub(this);
+            }
+        }
+        let tmp = this.depIds;
+        this.depIds = this.newDepIds;
+        this.newDepIds = tmp;
+        this.newDepIds.clear();
+        tmp = this.deps;
+        this.deps = this.newDeps;
+        this.newDeps = tmp;
+        this.newDeps.length = 0;
+    }
+    /**
+     * Subscriber interface.
+     * Will be called when a dependency changes.
+     */
+    update() {
+        /* istanbul ignore else */
+        if (this.lazy) {
+            this.dirty = true;
+        }
+        else if (this.sync) {
+            this.run();
+        }
+        else {
+            queueWatcher(this);
         }
     }
     /**
-     * Observe a list of Array items.
+     * Scheduler job interface.
+     * Will be called by the scheduler.
      */
-    observeArray(items) {
-        for (let i = 0, l = items.length; i < l; i++) {
-            observe(items[i]);
+    run() {
+        if (this.active) {
+            const value = this.get();
+            if (value !== this.value ||
+                // Deep watchers and watchers on Object/Arrays should fire even
+                // when the value is the same, because the value may
+                // have mutated.
+                isObject(value) ||
+                this.deep) {
+                // set new value
+                const oldValue = this.value;
+                this.value = value;
+                if (this.user) {
+                    const info = `callback for watcher "${this.expression}"`;
+                    invokeWithErrorHandling(this.cb, this.vm, [value, oldValue], this.vm, info);
+                }
+                else {
+                    this.cb.call(this.vm, value, oldValue);
+                }
+            }
+        }
+    }
+    /**
+     * Evaluate the value of the watcher.
+     * This only gets called for lazy watchers.
+     */
+    evaluate() {
+        this.value = this.get();
+        this.dirty = false;
+    }
+    /**
+     * Depend on all deps collected by this watcher.
+     */
+    depend() {
+        let i = this.deps.length;
+        while (i--) {
+            this.deps[i].depend();
+        }
+    }
+    /**
+     * Remove self from all dependencies' subscriber list.
+     */
+    teardown() {
+        if (this.vm && !this.vm._isBeingDestroyed) {
+            remove$2(this.vm._scope.effects, this);
+        }
+        if (this.active) {
+            let i = this.deps.length;
+            while (i--) {
+                this.deps[i].removeSub(this);
+            }
+            this.active = false;
+            if (this.onStop) {
+                this.onStop();
+            }
         }
     }
 }
-// helpers
-/**
- * Augment a target Object or Array by intercepting
- * the prototype chain using __proto__
- */
-function protoAugment(target, src) {
-    /* eslint-disable no-proto */
-    target.__proto__ = src;
-    /* eslint-enable no-proto */
+
+const sharedPropertyDefinition = {
+    enumerable: true,
+    configurable: true,
+    get: noop,
+    set: noop
+};
+function proxy(target, sourceKey, key) {
+    sharedPropertyDefinition.get = function proxyGetter() {
+        return this[sourceKey][key];
+    };
+    sharedPropertyDefinition.set = function proxySetter(val) {
+        this[sourceKey][key] = val;
+    };
+    Object.defineProperty(target, key, sharedPropertyDefinition);
 }
-/**
- * Augment a target Object or Array by defining
- * hidden properties.
- */
-/* istanbul ignore next */
-function copyAugment(target, src, keys) {
-    for (let i = 0, l = keys.length; i < l; i++) {
+function initState(vm) {
+    const opts = vm.$options;
+    if (opts.props)
+        initProps$1(vm, opts.props);
+    // Composition API
+    initSetup(vm);
+    if (opts.methods)
+        initMethods(vm, opts.methods);
+    if (opts.data) {
+        initData(vm);
+    }
+    else {
+        const ob = observe((vm._data = {}));
+        ob && ob.vmCount++;
+    }
+    if (opts.computed)
+        initComputed$1(vm, opts.computed);
+    if (opts.watch && opts.watch !== nativeWatch) {
+        initWatch(vm, opts.watch);
+    }
+}
+function initProps$1(vm, propsOptions) {
+    const propsData = vm.$options.propsData || {};
+    const props = (vm._props = shallowReactive({}));
+    // cache prop keys so that future props updates can iterate using Array
+    // instead of dynamic object key enumeration.
+    const keys = (vm.$options._propKeys = []);
+    const isRoot = !vm.$parent;
+    // root instance props should be converted
+    if (!isRoot) {
+        toggleObserving(false);
+    }
+    for (const key in propsOptions) {
+        keys.push(key);
+        const value = validateProp(key, propsOptions, propsData, vm);
+        /* istanbul ignore else */
+        {
+            const hyphenatedKey = hyphenate(key);
+            if (isReservedAttribute(hyphenatedKey) ||
+                config.isReservedAttr(hyphenatedKey)) {
+                warn$2(`"${hyphenatedKey}" is a reserved attribute and cannot be used as component prop.`, vm);
+            }
+            defineReactive(props, key, value, () => {
+                if (!isRoot && !isUpdatingChildComponent) {
+                    warn$2(`Avoid mutating a prop directly since the value will be ` +
+                        `overwritten whenever the parent component re-renders. ` +
+                        `Instead, use a data or computed property based on the prop's ` +
+                        `value. Prop being mutated: "${key}"`, vm);
+                }
+            });
+        }
+        // static props are already proxied on the component's prototype
+        // during Vue.extend(). We only need to proxy props defined at
+        // instantiation here.
+        if (!(key in vm)) {
+            proxy(vm, `_props`, key);
+        }
+    }
+    toggleObserving(true);
+}
+function initData(vm) {
+    let data = vm.$options.data;
+    data = vm._data = isFunction(data) ? getData(data, vm) : data || {};
+    if (!isPlainObject(data)) {
+        data = {};
+        warn$2('data functions should return an object:\n' +
+                'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function', vm);
+    }
+    // proxy data on instance
+    const keys = Object.keys(data);
+    const props = vm.$options.props;
+    const methods = vm.$options.methods;
+    let i = keys.length;
+    while (i--) {
         const key = keys[i];
-        def(target, key, src[key]);
+        {
+            if (methods && hasOwn(methods, key)) {
+                warn$2(`Method "${key}" has already been defined as a data property.`, vm);
+            }
+        }
+        if (props && hasOwn(props, key)) {
+            warn$2(`The data property "${key}" is already declared as a prop. ` +
+                    `Use prop default value instead.`, vm);
+        }
+        else if (!isReserved(key)) {
+            proxy(vm, `_data`, key);
+        }
+    }
+    // observe data
+    const ob = observe(data);
+    ob && ob.vmCount++;
+}
+function getData(data, vm) {
+    // #7573 disable dep collection when invoking data getters
+    pushTarget();
+    try {
+        return data.call(vm, vm);
+    }
+    catch (e) {
+        handleError(e, vm, `data()`);
+        return {};
+    }
+    finally {
+        popTarget();
     }
 }
-/**
- * Attempt to create an observer instance for a value,
- * returns the new observer if successfully observed,
- * or the existing observer if the value already has one.
- */
-function observe(value, shallow) {
-    if (!isObject(value) || isRef(value) || value instanceof VNode) {
-        return;
+const computedWatcherOptions = { lazy: true };
+function initComputed$1(vm, computed) {
+    // $flow-disable-line
+    const watchers = (vm._computedWatchers = Object.create(null));
+    // computed properties are just getters during SSR
+    const isSSR = isServerRendering();
+    for (const key in computed) {
+        const userDef = computed[key];
+        const getter = isFunction(userDef) ? userDef : userDef.get;
+        if (getter == null) {
+            warn$2(`Getter is missing for computed property "${key}".`, vm);
+        }
+        if (!isSSR) {
+            // create internal watcher for the computed property.
+            watchers[key] = new Watcher(vm, getter || noop, noop, computedWatcherOptions);
+        }
+        // component-defined computed properties are already defined on the
+        // component prototype. We only need to define computed properties defined
+        // at instantiation here.
+        if (!(key in vm)) {
+            defineComputed(vm, key, userDef);
+        }
+        else {
+            if (key in vm.$data) {
+                warn$2(`The computed property "${key}" is already defined in data.`, vm);
+            }
+            else if (vm.$options.props && key in vm.$options.props) {
+                warn$2(`The computed property "${key}" is already defined as a prop.`, vm);
+            }
+            else if (vm.$options.methods && key in vm.$options.methods) {
+                warn$2(`The computed property "${key}" is already defined as a method.`, vm);
+            }
+        }
     }
-    let ob;
-    if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
-        ob = value.__ob__;
-    }
-    else if (shouldObserve &&
-        !isServerRendering() &&
-        (isArray(value) || isPlainObject(value)) &&
-        Object.isExtensible(value) &&
-        !value.__v_skip) {
-        ob = new Observer(value, shallow);
-    }
-    return ob;
 }
-/**
- * Define a reactive property on an Object.
- */
-function defineReactive(obj, key, val, customSetter, shallow) {
-    const dep = new Dep();
-    const property = Object.getOwnPropertyDescriptor(obj, key);
-    if (property && property.configurable === false) {
-        return;
+function defineComputed(target, key, userDef) {
+    const shouldCache = !isServerRendering();
+    if (isFunction(userDef)) {
+        sharedPropertyDefinition.get = shouldCache
+            ? createComputedGetter(key)
+            : createGetterInvoker(userDef);
+        sharedPropertyDefinition.set = noop;
     }
-    // cater for pre-defined getter/setters
-    const getter = property && property.get;
-    const setter = property && property.set;
-    if ((!getter || setter) &&
-        (val === NO_INIITIAL_VALUE || arguments.length === 2)) {
-        val = obj[key];
+    else {
+        sharedPropertyDefinition.get = userDef.get
+            ? shouldCache && userDef.cache !== false
+                ? createComputedGetter(key)
+                : createGetterInvoker(userDef.get)
+            : noop;
+        sharedPropertyDefinition.set = userDef.set || noop;
     }
-    let childOb = !shallow && observe(val);
-    Object.defineProperty(obj, key, {
-        enumerable: true,
-        configurable: true,
-        get: function reactiveGetter() {
-            const value = getter ? getter.call(obj) : val;
+    if (sharedPropertyDefinition.set === noop) {
+        sharedPropertyDefinition.set = function () {
+            warn$2(`Computed property "${key}" was assigned to but it has no setter.`, this);
+        };
+    }
+    Object.defineProperty(target, key, sharedPropertyDefinition);
+}
+function createComputedGetter(key) {
+    return function computedGetter() {
+        const watcher = this._computedWatchers && this._computedWatchers[key];
+        if (watcher) {
+            if (watcher.dirty) {
+                watcher.evaluate();
+            }
             if (Dep.target) {
-                {
-                    dep.depend({
-                        target: obj,
+                if (Dep.target.onTrack) {
+                    Dep.target.onTrack({
+                        effect: Dep.target,
+                        target: this,
                         type: "get" /* TrackOpTypes.GET */,
                         key
                     });
                 }
-                if (childOb) {
-                    childOb.dep.depend();
-                    if (isArray(value)) {
-                        dependArray(value);
-                    }
-                }
+                watcher.depend();
             }
-            return isRef(value) && !shallow ? value.value : value;
-        },
-        set: function reactiveSetter(newVal) {
-            const value = getter ? getter.call(obj) : val;
-            if (!hasChanged(value, newVal)) {
-                return;
+            return watcher.value;
+        }
+    };
+}
+function createGetterInvoker(fn) {
+    return function computedGetter() {
+        return fn.call(this, this);
+    };
+}
+function initMethods(vm, methods) {
+    const props = vm.$options.props;
+    for (const key in methods) {
+        {
+            if (typeof methods[key] !== 'function') {
+                warn$2(`Method "${key}" has type "${typeof methods[key]}" in the component definition. ` +
+                    `Did you reference the function correctly?`, vm);
             }
-            if (customSetter) {
-                customSetter();
+            if (props && hasOwn(props, key)) {
+                warn$2(`Method "${key}" has already been defined as a prop.`, vm);
             }
-            if (setter) {
-                setter.call(obj, newVal);
+            if (key in vm && isReserved(key)) {
+                warn$2(`Method "${key}" conflicts with an existing Vue instance method. ` +
+                    `Avoid defining component methods that start with _ or $.`);
             }
-            else if (getter) {
-                // #7981: for accessor properties without setter
-                return;
+        }
+        vm[key] = typeof methods[key] !== 'function' ? noop : bind$1(methods[key], vm);
+    }
+}
+function initWatch(vm, watch) {
+    for (const key in watch) {
+        const handler = watch[key];
+        if (isArray(handler)) {
+            for (let i = 0; i < handler.length; i++) {
+                createWatcher(vm, key, handler[i]);
             }
-            else if (isRef(value) && !isRef(newVal)) {
-                value.value = newVal;
-                return;
-            }
-            else {
-                val = newVal;
-            }
-            childOb = !shallow && observe(newVal);
+        }
+        else {
+            createWatcher(vm, key, handler);
+        }
+    }
+}
+function createWatcher(vm, expOrFn, handler, options) {
+    if (isPlainObject(handler)) {
+        options = handler;
+        handler = handler.handler;
+    }
+    if (typeof handler === 'string') {
+        handler = vm[handler];
+    }
+    return vm.$watch(expOrFn, handler, options);
+}
+function stateMixin(Vue) {
+    // flow somehow has problems with directly declared definition object
+    // when using Object.defineProperty, so we have to procedurally build up
+    // the object here.
+    const dataDef = {};
+    dataDef.get = function () {
+        return this._data;
+    };
+    const propsDef = {};
+    propsDef.get = function () {
+        return this._props;
+    };
+    {
+        dataDef.set = function () {
+            warn$2('Avoid replacing instance root $data. ' +
+                'Use nested data properties instead.', this);
+        };
+        propsDef.set = function () {
+            warn$2(`$props is readonly.`, this);
+        };
+    }
+    Object.defineProperty(Vue.prototype, '$data', dataDef);
+    Object.defineProperty(Vue.prototype, '$props', propsDef);
+    Vue.prototype.$set = set;
+    Vue.prototype.$delete = del;
+    Vue.prototype.$watch = function (expOrFn, cb, options) {
+        const vm = this;
+        if (isPlainObject(cb)) {
+            return createWatcher(vm, expOrFn, cb, options);
+        }
+        options = options || {};
+        options.user = true;
+        const watcher = new Watcher(vm, expOrFn, cb, options);
+        if (options.immediate) {
+            const info = `callback for immediate watcher "${watcher.expression}"`;
+            pushTarget();
+            invokeWithErrorHandling(cb, vm, [watcher.value], vm, info);
+            popTarget();
+        }
+        return function unwatchFn() {
+            watcher.teardown();
+        };
+    };
+}
+
+function initProvide(vm) {
+    const provideOption = vm.$options.provide;
+    if (provideOption) {
+        const provided = isFunction(provideOption)
+            ? provideOption.call(vm)
+            : provideOption;
+        if (!isObject(provided)) {
+            return;
+        }
+        const source = resolveProvided(vm);
+        // IE9 doesn't support Object.getOwnPropertyDescriptors so we have to
+        // iterate the keys ourselves.
+        const keys = hasSymbol ? Reflect.ownKeys(provided) : Object.keys(provided);
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            Object.defineProperty(source, key, Object.getOwnPropertyDescriptor(provided, key));
+        }
+    }
+}
+function initInjections(vm) {
+    const result = resolveInject(vm.$options.inject, vm);
+    if (result) {
+        toggleObserving(false);
+        Object.keys(result).forEach(key => {
+            /* istanbul ignore else */
             {
-                dep.notify({
-                    type: "set" /* TriggerOpTypes.SET */,
-                    target: obj,
-                    key,
-                    newValue: newVal,
-                    oldValue: value
+                defineReactive(vm, key, result[key], () => {
+                    warn$2(`Avoid mutating an injected value directly since the changes will be ` +
+                        `overwritten whenever the provided component re-renders. ` +
+                        `injection being mutated: "${key}"`, vm);
                 });
             }
+        });
+        toggleObserving(true);
+    }
+}
+function resolveInject(inject, vm) {
+    if (inject) {
+        // inject is :any because flow is not smart enough to figure out cached
+        const result = Object.create(null);
+        const keys = hasSymbol ? Reflect.ownKeys(inject) : Object.keys(inject);
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            // #6574 in case the inject object is observed...
+            if (key === '__ob__')
+                continue;
+            const provideKey = inject[key].from;
+            if (provideKey in vm._provided) {
+                result[key] = vm._provided[provideKey];
+            }
+            else if ('default' in inject[key]) {
+                const provideDefault = inject[key].default;
+                result[key] = isFunction(provideDefault)
+                    ? provideDefault.call(vm)
+                    : provideDefault;
+            }
+            else {
+                warn$2(`Injection "${key}" not found`, vm);
+            }
+        }
+        return result;
+    }
+}
+
+let uid = 0;
+function initMixin$1(Vue) {
+    Vue.prototype._init = function (options) {
+        const vm = this;
+        // a uid
+        vm._uid = uid++;
+        let startTag, endTag;
+        /* istanbul ignore if */
+        if (config.performance && mark) {
+            startTag = `vue-perf-start:${vm._uid}`;
+            endTag = `vue-perf-end:${vm._uid}`;
+            mark(startTag);
+        }
+        // a flag to mark this as a Vue instance without having to do instanceof
+        // check
+        vm._isVue = true;
+        // avoid instances from being observed
+        vm.__v_skip = true;
+        // effect scope
+        vm._scope = new EffectScope(true /* detached */);
+        // merge options
+        if (options && options._isComponent) {
+            // optimize internal component instantiation
+            // since dynamic options merging is pretty slow, and none of the
+            // internal component options needs special treatment.
+            initInternalComponent(vm, options);
+        }
+        else {
+            vm.$options = mergeOptions(resolveConstructorOptions(vm.constructor), options || {}, vm);
+        }
+        /* istanbul ignore else */
+        {
+            initProxy(vm);
+        }
+        // expose real self
+        vm._self = vm;
+        initLifecycle(vm);
+        initEvents(vm);
+        initRender(vm);
+        callHook$1(vm, 'beforeCreate', undefined, false /* setContext */);
+        initInjections(vm); // resolve injections before data/props
+        initState(vm);
+        initProvide(vm); // resolve provide after data/props
+        callHook$1(vm, 'created');
+        /* istanbul ignore if */
+        if (config.performance && mark) {
+            vm._name = formatComponentName(vm, false);
+            mark(endTag);
+            measure(`vue ${vm._name} init`, startTag, endTag);
+        }
+        if (vm.$options.el) {
+            vm.$mount(vm.$options.el);
+        }
+    };
+}
+function initInternalComponent(vm, options) {
+    const opts = (vm.$options = Object.create(vm.constructor.options));
+    // doing this because it's faster than dynamic enumeration.
+    const parentVnode = options._parentVnode;
+    opts.parent = options.parent;
+    opts._parentVnode = parentVnode;
+    const vnodeComponentOptions = parentVnode.componentOptions;
+    opts.propsData = vnodeComponentOptions.propsData;
+    opts._parentListeners = vnodeComponentOptions.listeners;
+    opts._renderChildren = vnodeComponentOptions.children;
+    opts._componentTag = vnodeComponentOptions.tag;
+    if (options.render) {
+        opts.render = options.render;
+        opts.staticRenderFns = options.staticRenderFns;
+    }
+}
+function resolveConstructorOptions(Ctor) {
+    let options = Ctor.options;
+    if (Ctor.super) {
+        const superOptions = resolveConstructorOptions(Ctor.super);
+        const cachedSuperOptions = Ctor.superOptions;
+        if (superOptions !== cachedSuperOptions) {
+            // super option changed,
+            // need to resolve new options.
+            Ctor.superOptions = superOptions;
+            // check if there are any late-modified/attached options (#4976)
+            const modifiedOptions = resolveModifiedOptions(Ctor);
+            // update base extend options
+            if (modifiedOptions) {
+                extend(Ctor.extendOptions, modifiedOptions);
+            }
+            options = Ctor.options = mergeOptions(superOptions, Ctor.extendOptions);
+            if (options.name) {
+                options.components[options.name] = Ctor;
+            }
+        }
+    }
+    return options;
+}
+function resolveModifiedOptions(Ctor) {
+    let modified;
+    const latest = Ctor.options;
+    const sealed = Ctor.sealedOptions;
+    for (const key in latest) {
+        if (latest[key] !== sealed[key]) {
+            if (!modified)
+                modified = {};
+            modified[key] = latest[key];
+        }
+    }
+    return modified;
+}
+
+function FunctionalRenderContext(data, props, children, parent, Ctor) {
+    const options = Ctor.options;
+    // ensure the createElement function in functional components
+    // gets a unique context - this is necessary for correct named slot check
+    let contextVm;
+    if (hasOwn(parent, '_uid')) {
+        contextVm = Object.create(parent);
+        contextVm._original = parent;
+    }
+    else {
+        // the context vm passed in is a functional context as well.
+        // in this case we want to make sure we are able to get a hold to the
+        // real context instance.
+        contextVm = parent;
+        // @ts-ignore
+        parent = parent._original;
+    }
+    const isCompiled = isTrue(options._compiled);
+    const needNormalization = !isCompiled;
+    this.data = data;
+    this.props = props;
+    this.children = children;
+    this.parent = parent;
+    this.listeners = data.on || emptyObject;
+    this.injections = resolveInject(options.inject, parent);
+    this.slots = () => {
+        if (!this.$slots) {
+            normalizeScopedSlots(parent, data.scopedSlots, (this.$slots = resolveSlots(children, parent)));
+        }
+        return this.$slots;
+    };
+    Object.defineProperty(this, 'scopedSlots', {
+        enumerable: true,
+        get() {
+            return normalizeScopedSlots(parent, data.scopedSlots, this.slots());
         }
     });
-    return dep;
-}
-function set(target, key, val) {
-    if ((isUndef(target) || isPrimitive(target))) {
-        warn$2(`Cannot set reactive property on undefined, null, or primitive value: ${target}`);
+    // support for compiled functional template
+    if (isCompiled) {
+        // exposing $options for renderStatic()
+        this.$options = options;
+        // pre-resolve slots for renderSlot()
+        this.$slots = this.slots();
+        this.$scopedSlots = normalizeScopedSlots(parent, data.scopedSlots, this.$slots);
     }
-    if (isReadonly(target)) {
-        warn$2(`Set operation on key "${key}" failed: target is readonly.`);
-        return;
+    if (options._scopeId) {
+        this._c = (a, b, c, d) => {
+            const vnode = createElement$1(contextVm, a, b, c, d, needNormalization);
+            if (vnode && !isArray(vnode)) {
+                vnode.fnScopeId = options._scopeId;
+                vnode.fnContext = parent;
+            }
+            return vnode;
+        };
     }
-    if (isArray(target) && isValidArrayIndex(key)) {
-        target.length = Math.max(target.length, key);
-        target.splice(key, 1, val);
-        return val;
-    }
-    if (key in target && !(key in Object.prototype)) {
-        target[key] = val;
-        return val;
-    }
-    const ob = target.__ob__;
-    if (target._isVue || (ob && ob.vmCount)) {
-        warn$2('Avoid adding reactive properties to a Vue instance or its root $data ' +
-                'at runtime - declare it upfront in the data option.');
-        return val;
-    }
-    if (!ob) {
-        target[key] = val;
-        return val;
-    }
-    defineReactive(ob.value, key, val);
-    {
-        ob.dep.notify({
-            type: "add" /* TriggerOpTypes.ADD */,
-            target: target,
-            key,
-            newValue: val,
-            oldValue: undefined
-        });
-    }
-    return val;
-}
-function del(target, key) {
-    if ((isUndef(target) || isPrimitive(target))) {
-        warn$2(`Cannot delete reactive property on undefined, null, or primitive value: ${target}`);
-    }
-    if (isArray(target) && isValidArrayIndex(key)) {
-        target.splice(key, 1);
-        return;
-    }
-    const ob = target.__ob__;
-    if (target._isVue || (ob && ob.vmCount)) {
-        warn$2('Avoid deleting properties on a Vue instance or its root $data ' +
-                '- just set it to null.');
-        return;
-    }
-    if (isReadonly(target)) {
-        warn$2(`Delete operation on key "${key}" failed: target is readonly.`);
-        return;
-    }
-    if (!hasOwn(target, key)) {
-        return;
-    }
-    delete target[key];
-    if (!ob) {
-        return;
-    }
-    {
-        ob.dep.notify({
-            type: "delete" /* TriggerOpTypes.DELETE */,
-            target: target,
-            key
-        });
+    else {
+        this._c = (a, b, c, d) => createElement$1(contextVm, a, b, c, d, needNormalization);
     }
 }
-/**
- * Collect dependencies on array elements when the array is touched, since
- * we cannot intercept array element access like property getters.
- */
-function dependArray(value) {
-    for (let e, i = 0, l = value.length; i < l; i++) {
-        e = value[i];
-        if (e && e.__ob__) {
-            e.__ob__.dep.depend();
-        }
-        if (isArray(e)) {
-            dependArray(e);
+installRenderHelpers(FunctionalRenderContext.prototype);
+function createFunctionalComponent(Ctor, propsData, data, contextVm, children) {
+    const options = Ctor.options;
+    const props = {};
+    const propOptions = options.props;
+    if (isDef(propOptions)) {
+        for (const key in propOptions) {
+            props[key] = validateProp(key, propOptions, propsData || emptyObject);
         }
     }
+    else {
+        if (isDef(data.attrs))
+            mergeProps(props, data.attrs);
+        if (isDef(data.props))
+            mergeProps(props, data.props);
+    }
+    const renderContext = new FunctionalRenderContext(data, props, children, contextVm, Ctor);
+    const vnode = options.render.call(null, renderContext._c, renderContext);
+    if (vnode instanceof VNode) {
+        return cloneAndMarkFunctionalResult(vnode, data, renderContext.parent, options, renderContext);
+    }
+    else if (isArray(vnode)) {
+        const vnodes = normalizeChildren(vnode) || [];
+        const res = new Array(vnodes.length);
+        for (let i = 0; i < vnodes.length; i++) {
+            res[i] = cloneAndMarkFunctionalResult(vnodes[i], data, renderContext.parent, options, renderContext);
+        }
+        return res;
+    }
+}
+function cloneAndMarkFunctionalResult(vnode, data, contextVm, options, renderContext) {
+    // #7817 clone node before setting fnContext, otherwise if the node is reused
+    // (e.g. it was from a cached normal slot) the fnContext causes named slots
+    // that should not be matched to match.
+    const clone = cloneVNode(vnode);
+    clone.fnContext = contextVm;
+    clone.fnOptions = options;
+    {
+        (clone.devtoolsMeta = clone.devtoolsMeta || {}).renderContext =
+            renderContext;
+    }
+    if (data.slot) {
+        (clone.data || (clone.data = {})).slot = data.slot;
+    }
+    return clone;
+}
+function mergeProps(to, from) {
+    for (const key in from) {
+        to[camelize(key)] = from[key];
+    }
+}
+
+function getComponentName(options) {
+    return options.name || options.__name || options._componentTag;
+}
+// inline hooks to be invoked on component VNodes during patch
+const componentVNodeHooks = {
+    init(vnode, hydrating) {
+        if (vnode.componentInstance &&
+            !vnode.componentInstance._isDestroyed &&
+            vnode.data.keepAlive) {
+            // kept-alive components, treat as a patch
+            const mountedNode = vnode; // work around flow
+            componentVNodeHooks.prepatch(mountedNode, mountedNode);
+        }
+        else {
+            const child = (vnode.componentInstance = createComponentInstanceForVnode(vnode, activeInstance));
+            child.$mount(hydrating ? vnode.elm : undefined, hydrating);
+        }
+    },
+    prepatch(oldVnode, vnode) {
+        const options = vnode.componentOptions;
+        const child = (vnode.componentInstance = oldVnode.componentInstance);
+        updateChildComponent(child, options.propsData, // updated props
+        options.listeners, // updated listeners
+        vnode, // new parent vnode
+        options.children // new children
+        );
+    },
+    insert(vnode) {
+        const { context, componentInstance } = vnode;
+        if (!componentInstance._isMounted) {
+            componentInstance._isMounted = true;
+            callHook$1(componentInstance, 'mounted');
+        }
+        if (vnode.data.keepAlive) {
+            if (context._isMounted) {
+                // vue-router#1212
+                // During updates, a kept-alive component's child components may
+                // change, so directly walking the tree here may call activated hooks
+                // on incorrect children. Instead we push them into a queue which will
+                // be processed after the whole patch process ended.
+                queueActivatedComponent(componentInstance);
+            }
+            else {
+                activateChildComponent(componentInstance, true /* direct */);
+            }
+        }
+    },
+    destroy(vnode) {
+        const { componentInstance } = vnode;
+        if (!componentInstance._isDestroyed) {
+            if (!vnode.data.keepAlive) {
+                componentInstance.$destroy();
+            }
+            else {
+                deactivateChildComponent(componentInstance, true /* direct */);
+            }
+        }
+    }
+};
+const hooksToMerge = Object.keys(componentVNodeHooks);
+function createComponent(Ctor, data, context, children, tag) {
+    if (isUndef(Ctor)) {
+        return;
+    }
+    const baseCtor = context.$options._base;
+    // plain options object: turn it into a constructor
+    if (isObject(Ctor)) {
+        Ctor = baseCtor.extend(Ctor);
+    }
+    // if at this stage it's not a constructor or an async component factory,
+    // reject.
+    if (typeof Ctor !== 'function') {
+        {
+            warn$2(`Invalid Component definition: ${String(Ctor)}`, context);
+        }
+        return;
+    }
+    // async component
+    let asyncFactory;
+    // @ts-expect-error
+    if (isUndef(Ctor.cid)) {
+        asyncFactory = Ctor;
+        Ctor = resolveAsyncComponent(asyncFactory, baseCtor);
+        if (Ctor === undefined) {
+            // return a placeholder node for async component, which is rendered
+            // as a comment node but preserves all the raw information for the node.
+            // the information will be used for async server-rendering and hydration.
+            return createAsyncPlaceholder(asyncFactory, data, context, children, tag);
+        }
+    }
+    data = data || {};
+    // resolve constructor options in case global mixins are applied after
+    // component constructor creation
+    resolveConstructorOptions(Ctor);
+    // transform component v-model data into props & events
+    if (isDef(data.model)) {
+        // @ts-expect-error
+        transformModel(Ctor.options, data);
+    }
+    // extract props
+    // @ts-expect-error
+    const propsData = extractPropsFromVNodeData(data, Ctor, tag);
+    // functional component
+    // @ts-expect-error
+    if (isTrue(Ctor.options.functional)) {
+        return createFunctionalComponent(Ctor, propsData, data, context, children);
+    }
+    // extract listeners, since these needs to be treated as
+    // child component listeners instead of DOM listeners
+    const listeners = data.on;
+    // replace with listeners with .native modifier
+    // so it gets processed during parent component patch.
+    data.on = data.nativeOn;
+    // @ts-expect-error
+    if (isTrue(Ctor.options.abstract)) {
+        // abstract components do not keep anything
+        // other than props & listeners & slot
+        // work around flow
+        const slot = data.slot;
+        data = {};
+        if (slot) {
+            data.slot = slot;
+        }
+    }
+    // install component management hooks onto the placeholder node
+    installComponentHooks(data);
+    // return a placeholder vnode
+    // @ts-expect-error
+    const name = getComponentName(Ctor.options) || tag;
+    const vnode = new VNode(
+    // @ts-expect-error
+    `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`, data, undefined, undefined, undefined, context, 
+    // @ts-expect-error
+    { Ctor, propsData, listeners, tag, children }, asyncFactory);
+    return vnode;
+}
+function createComponentInstanceForVnode(
+// we know it's MountedComponentVNode but flow doesn't
+vnode, 
+// activeInstance in lifecycle state
+parent) {
+    const options = {
+        _isComponent: true,
+        _parentVnode: vnode,
+        parent
+    };
+    // check inline-template render functions
+    const inlineTemplate = vnode.data.inlineTemplate;
+    if (isDef(inlineTemplate)) {
+        options.render = inlineTemplate.render;
+        options.staticRenderFns = inlineTemplate.staticRenderFns;
+    }
+    return new vnode.componentOptions.Ctor(options);
+}
+function installComponentHooks(data) {
+    const hooks = data.hook || (data.hook = {});
+    for (let i = 0; i < hooksToMerge.length; i++) {
+        const key = hooksToMerge[i];
+        const existing = hooks[key];
+        const toMerge = componentVNodeHooks[key];
+        // @ts-expect-error
+        if (existing !== toMerge && !(existing && existing._merged)) {
+            hooks[key] = existing ? mergeHook(toMerge, existing) : toMerge;
+        }
+    }
+}
+function mergeHook(f1, f2) {
+    const merged = (a, b) => {
+        // flow complains about extra args which is why we use any
+        f1(a, b);
+        f2(a, b);
+    };
+    merged._merged = true;
+    return merged;
+}
+// transform component v-model info (value and callback) into
+// prop and event handler respectively.
+function transformModel(options, data) {
+    const prop = (options.model && options.model.prop) || 'value';
+    const event = (options.model && options.model.event) || 'input';
+    (data.attrs || (data.attrs = {}))[prop] = data.model.value;
+    const on = data.on || (data.on = {});
+    const existing = on[event];
+    const callback = data.model.callback;
+    if (isDef(existing)) {
+        if (isArray(existing)
+            ? existing.indexOf(callback) === -1
+            : existing !== callback) {
+            on[event] = [callback].concat(existing);
+        }
+    }
+    else {
+        on[event] = callback;
+    }
+}
+
+let warn$2 = noop;
+let tip = noop;
+let generateComponentTrace; // work around flow check
+let formatComponentName;
+{
+    const hasConsole = typeof console !== 'undefined';
+    const classifyRE = /(?:^|[-_])(\w)/g;
+    const classify = str => str.replace(classifyRE, c => c.toUpperCase()).replace(/[-_]/g, '');
+    warn$2 = (msg, vm = currentInstance) => {
+        const trace = vm ? generateComponentTrace(vm) : '';
+        if (config.warnHandler) {
+            config.warnHandler.call(null, msg, vm, trace);
+        }
+        else if (hasConsole && !config.silent) {
+            console.error(`[Vue warn]: ${msg}${trace}`);
+        }
+    };
+    tip = (msg, vm) => {
+        if (hasConsole && !config.silent) {
+            console.warn(`[Vue tip]: ${msg}` + (vm ? generateComponentTrace(vm) : ''));
+        }
+    };
+    formatComponentName = (vm, includeFile) => {
+        if (vm.$root === vm) {
+            return '<Root>';
+        }
+        const options = isFunction(vm) && vm.cid != null
+            ? vm.options
+            : vm._isVue
+                ? vm.$options || vm.constructor.options
+                : vm;
+        let name = getComponentName(options);
+        const file = options.__file;
+        if (!name && file) {
+            const match = file.match(/([^/\\]+)\.vue$/);
+            name = match && match[1];
+        }
+        return ((name ? `<${classify(name)}>` : `<Anonymous>`) +
+            (file && includeFile !== false ? ` at ${file}` : ''));
+    };
+    const repeat = (str, n) => {
+        let res = '';
+        while (n) {
+            if (n % 2 === 1)
+                res += str;
+            if (n > 1)
+                str += str;
+            n >>= 1;
+        }
+        return res;
+    };
+    generateComponentTrace = (vm) => {
+        if (vm._isVue && vm.$parent) {
+            const tree = [];
+            let currentRecursiveSequence = 0;
+            while (vm) {
+                if (tree.length > 0) {
+                    const last = tree[tree.length - 1];
+                    if (last.constructor === vm.constructor) {
+                        currentRecursiveSequence++;
+                        vm = vm.$parent;
+                        continue;
+                    }
+                    else if (currentRecursiveSequence > 0) {
+                        tree[tree.length - 1] = [last, currentRecursiveSequence];
+                        currentRecursiveSequence = 0;
+                    }
+                }
+                tree.push(vm);
+                vm = vm.$parent;
+            }
+            return ('\n\nfound in\n\n' +
+                tree
+                    .map((vm, i) => `${i === 0 ? '---> ' : repeat(' ', 5 + i * 2)}${isArray(vm)
+                    ? `${formatComponentName(vm[0])}... (${vm[1]} recursive calls)`
+                    : formatComponentName(vm)}`)
+                    .join('\n'));
+        }
+        else {
+            return `\n\n(found in ${formatComponentName(vm)})`;
+        }
+    };
 }
 
 /**
@@ -43219,7 +43326,7 @@ function initExtend(Vue) {
         if (cachedCtors[SuperId]) {
             return cachedCtors[SuperId];
         }
-        const name = extendOptions.name || Super.options.name;
+        const name = getComponentName(extendOptions) || getComponentName(Super.options);
         if (name) {
             validateComponentName(name);
         }
@@ -43307,8 +43414,8 @@ function initAssetRegisters(Vue) {
     });
 }
 
-function getComponentName(opts) {
-    return opts && (opts.Ctor.options.name || opts.tag);
+function _getComponentName(opts) {
+    return opts && (getComponentName(opts.Ctor.options) || opts.tag);
 }
 function matches(pattern, name) {
     if (isArray(pattern)) {
@@ -43360,7 +43467,7 @@ var KeepAlive = {
             if (vnodeToCache) {
                 const { tag, componentInstance, componentOptions } = vnodeToCache;
                 cache[keyToCache] = {
-                    name: getComponentName(componentOptions),
+                    name: _getComponentName(componentOptions),
                     tag,
                     componentInstance
                 };
@@ -43400,7 +43507,7 @@ var KeepAlive = {
         const componentOptions = vnode && vnode.componentOptions;
         if (componentOptions) {
             // check pattern
-            const name = getComponentName(componentOptions);
+            const name = _getComponentName(componentOptions);
             const { include, exclude } = this;
             if (
             // not included
@@ -44639,7 +44746,7 @@ function normalizeDirectives(dirs, vm) {
         }
         res[getRawDirName(dir)] = dir;
         if (vm._setupState && vm._setupState.__sfc) {
-            dir.def = resolveAsset(vm, '_setupState', 'v-' + dir.name);
+            dir.def = dir.def || resolveAsset(vm, '_setupState', 'v-' + dir.name);
         }
         dir.def = dir.def || resolveAsset(vm.$options, 'directives', dir.name, true);
     }
@@ -46545,7 +46652,7 @@ var TransitionGroup = {
                 else {
                     const opts = c.componentOptions;
                     const name = opts
-                        ? opts.Ctor.options.name || opts.tag || ''
+                        ? getComponentName(opts.Ctor.options) || opts.tag || ''
                         : c.tag;
                     warn$2(`<transition-group> children must be keyed: <${name}>`);
                 }
@@ -48369,13 +48476,14 @@ function genElement(el, state) {
         }
         else {
             let data;
-            if (!el.plain || (el.pre && state.maybeComponent(el))) {
+            const maybeComponent = state.maybeComponent(el);
+            if (!el.plain || (el.pre && maybeComponent)) {
                 data = genData(el, state);
             }
             let tag;
             // check if this is a component in <script setup>
             const bindings = state.options.bindings;
-            if (bindings && bindings.__isScriptSetup !== false) {
+            if (maybeComponent && bindings && bindings.__isScriptSetup !== false) {
                 tag =
                     checkBindingType(bindings, el.tag) ||
                         checkBindingType(bindings, camelize(el.tag)) ||
@@ -49472,26 +49580,14 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./resources/sass/app.scss":
-/*!*********************************!*\
-  !*** ./resources/sass/app.scss ***!
-  \*********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-// removed by extract-text-webpack-plugin
-
-/***/ }),
-
 /***/ 0:
-/*!*************************************************************!*\
-  !*** multi ./resources/js/app.js ./resources/sass/app.scss ***!
-  \*************************************************************/
+/*!***********************************!*\
+  !*** multi ./resources/js/app.js ***!
+  \***********************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! D:\wamp64\www\Laravel\Sinapsis\resources\js\app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! D:\wamp64\www\Laravel\Sinapsis\resources\sass\app.scss */"./resources/sass/app.scss");
+module.exports = __webpack_require__(/*! C:\xampp\htdocs\Sinapsis\resources\js\app.js */"./resources/js/app.js");
 
 
 /***/ })

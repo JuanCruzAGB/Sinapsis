@@ -43,6 +43,7 @@
             return view('user.list', [
                 'role' => $role,
                 'users' => $users,
+                'role' => $role,
             ]);
         }
 
