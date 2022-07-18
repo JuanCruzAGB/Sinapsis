@@ -1,4 +1,69 @@
+#panel-tab-menu.tab-menu {
+    --tab-menu-header-background-color: var(--color-blue);
+    --tab-menu-button-color: var(--color-white);
+    --tab-menu-button-color-alt: var(--color-grey);
+    --tab-menu-content-md-width: 100%;
+}
 
+#panel-tab-menu.tab-menu > .tab-header {
+    background-image: linear-gradient(45deg, #0B5F83, #004D64);
+}
+
+#panel-tab-menu.tab-menu > .tab-header {
+    padding: 0 1rem;
+}
+
+#panel-tab-menu.tab-menu .tab-header a.sidebar-button {
+    color: var(--color-white);
+    font-size: 1.2rem;
+}
+
+#panel-tab-menu.tab-menu > .tab-header a:not(.sidebar-button) {
+    flex-basis: 70%;
+}
+
+#panel-sidebar.sidebar .sidebar-body {
+    --sidebar-background-color: transparent;
+    --sidebar-content-background-color: transparent;
+    background-image: linear-gradient(45deg, #0B5F83, #004D64);
+}
+
+#panel-sidebar.sidebar .sidebar-body .sidebar-header {
+    --nav-menu-image-height: 8rem;
+    height: 8rem;
+    border: none;
+}
+
+#panel-sidebar.sidebar .sidebar-body .sidebar-footer {
+    border: none;
+}
+
+#panel-sidebar.sidebar .sidebar-body .sidebar-header .sidebar-title {
+    padding: 0 1rem;
+}
+
+#panel-sidebar.sidebar .sidebar-body .sidebar-header .sidebar-title img {
+    flex-basis: 100%;
+    object-position: center;
+}
+
+#panel-sidebar.sidebar .sidebar-body .sidebar-header .sidebar-button {
+    flex-basis: 0;
+    font-size: 0;
+}
+
+#panel-sidebar.sidebar .sidebar-body .sidebar-content .sidebar-menu-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+#panel-sidebar.sidebar .sidebar-body .sidebar-content .sidebar-menu-list li {
+    display: flex;
+    justify-content: center;
+    flex-basis: 100%;
+    border: none;
+}
 
 /* ? MD */
 @media (min-width: 768px) {
@@ -7,7 +72,25 @@
 
 /* ? LG */
 @media (min-width: 1024px) {
-    /*  */
+    #panel-tab-menu.tab-menu > .tab-header {
+        display: none;
+    }
+    
+    #panel-tab-menu.tab-menu .tab-header a.sidebar-button {
+        display: none;
+    }
+
+    #panel-sidebar.sidebar {
+        position: revert;
+    }
+
+    #panel-sidebar.sidebar.tabs .sidebar-body .sidebar-content {
+        position: relative;
+    }
+
+    #panel-tab-menu.tab-menu.vertical .tab-content-list {
+        /* margin-left: 25%; */
+    }
 }
 
 /* ? XL */

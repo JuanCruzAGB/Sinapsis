@@ -12,65 +12,128 @@
 
 @section("body")
     <main id="panel-tab-menu" class="tab-menu vertical">
-        {{-- <header class="tab-header md:hidden">
+        <header class="tab-header md:hidden">
             <a href="#panel-sidebar" class="sidebar-button panel-sidebar open left">
                 <i class="fas fa-bars"></i>
             </a>
 
             <a href="/home">
-                <picture>
-                    <source srcset="{{ asset('img/resources/logo/02-regular-white.png') }}"
-                        media="(min-width: 768px)"/>
+                <img src="{{ asset('img/resources/logo/01-white.png') }}" 
+                    alt="Path Logo"/>
 
-                    <img src="{{ asset('img/resources/logo/04-small-white.png') }}" 
-                        alt="Armentia Propiedades Logo"/>
-                </picture>
-
-                <h1 class="hidden">Armentia Propiedades</h1>
+                <h1 class="hidden">Path</h1>
             </a>
-        </header> --}}
+        </header>
 
-        {{-- <section id="panel-sidebar" class="tabs sidebar left">
+        <section id="panel-sidebar" class="tabs sidebar left opened">
             <main class="tab-body sidebar-body">
                 <header class="tab-header sidebar-header">
                     <a href="/home" class="sidebar-title">
-                        <picture>
-                            <source srcset="{{ asset('img/resources/logo/02-regular-white.png') }}"
-                                media="(min-width: 768px)"/>
-                                
-                            <img src="{{ asset('img/resources/logo/04-small-white.png') }}" 
-                                alt="Armentia Propiedades Logo"/>
-                        </picture>
+                        <img src="{{ asset('img/resources/logo/01-white.png') }}" 
+                            alt="Path Logo"/>
 
-                        <h2 class="hidden">Armentia Propiedades</h2>
+                        <h2 class="hidden">Path</h2>
                     </a>
 
                     <a href="#_" class="sidebar-button panel-sidebar close left hidden">
-                        <span>Close</span>
+                        <i class="fas fa-times"></i>
                     </a>
                 </header>
                 
                 <section class="tab-content sidebar-content">
                     <ul class="tab-menu-list sidebar-menu-list">
-                        @yield("tab-menu-list")
+                        @switch(Auth::user()->id_role)
+                            @case(1)
+                                <li class="tab">
+                                    <a href="/users/corrector/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Correctors</span>
+                                    </a>
+                                </li>
 
-                        <li class="tab">
-                            <a href="/logout" class="tab-button sidebar-link Work-Sans">
-                                <span>Cerrar Sesión</span>
+                                <li class="tab">
+                                    <a href="/users/associated/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Associates</span>
+                                    </a>
+                                </li>
+
+                                <li class="tab">
+                                    <a href="/users/candidate/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Candidates</span>
+                                    </a>
+                                </li>
+                                @break
+                            @case(3)
+                                <li class="tab">
+                                    <a href="/dashboard" class="btn btn-transparent btn-white montserrat">
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
+
+                                @if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) !== false)
+                                    <li class="tab">
+                                        <a href="/users/administrator/list" class="btn btn-transparent btn-white montserrat">
+                                            <span>Administrators</span>
+                                        </a>
+                                    </li>
+                                @endif
+
+                                <li class="tab">
+                                    <a href="/users/corrector/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Correctors</span>
+                                    </a>
+                                </li>
+
+                                <li class="tab">
+                                    <a href="/users/associated/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Associates</span>
+                                    </a>
+                                </li>
+
+                                <li class="tab">
+                                    <a href="/users/candidate/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Candidates</span>
+                                    </a>
+                                </li>
+
+                                <li class="tab">
+                                    <a href="/exam/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Exams</span>
+                                    </a>
+                                </li>
+
+                                <li class="tab">
+                                    <a href="/evaluations/list" class="btn btn-transparent btn-white montserrat">
+                                        <span>Evaluations</span>
+                                    </a>
+                                </li>
+
+                                <li class="tab">
+                                    <a href="/cart" class="btn btn-transparent btn-white montserrat">
+                                        <span>Payments</span>
+                                    </a>
+                                </li>
+
+                                <li class="tab">
+                                    <a href="#" class="btn btn-transparent btn-white montserrat">
+                                        <span>Documents</span>
+                                    </a>
+                                </li>
+                                @break
+                        @endswitch
+                    </ul>
+                </section>
+
+                <footer class="sidebar-footer">
+                    <ul class="sidebar-footer-menu-list">
+                        <li>
+                            <a href="/logout" class="btn btn-transparent btn-white btn-borderless montserrat">
+                                <span>Log out</span>
                             </a>
                         </li>
                     </ul>
-                    
-                    @if ($button)
-                        <aside class="panel floating-menu bottom right">
-                            <a href="/{{ $section }}/create" title="Agregar" class="tab panel-tab-menu tab-button add-data floating-button btn btn-red btn-background round">
-                                <i class="fas fa-plus"></i>
-                            </a>
-                        </aside>
-                    @endif
-                </section>
+                </footer>
             </main>
-        </section> --}}
+        </section>
 
         <section class="tab-content-list">
             <ul class="list overflow-x-hidden">
