@@ -26,7 +26,7 @@
         @yield("body")
 
         {{-- JQuery --}}
-        <script src="{{ asset('js/mdb/jquery.min.js') }}"></script>
+        {{-- <script src="{{ asset('js/mdb/jquery.min.js') }}"></script> --}}
 
         {{-- App modules --}}
         <script src="{{ asset('js/app.js') }}"></script>

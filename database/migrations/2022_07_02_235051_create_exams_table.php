@@ -14,6 +14,7 @@
                 $table->string('name');
                 $table->string('slug');
                 $table->unsignedInteger('id_type');
+                $table->unsignedInteger('id_created_by')->nullable()->default(1);
                 $table->timestamp('scheduled_at');
                 $table->timestamp('deleted_at')->nullable();
                 $table->timestamps();

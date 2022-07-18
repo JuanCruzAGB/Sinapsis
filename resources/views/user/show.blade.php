@@ -1,7 +1,7 @@
 @extends('layouts.panel')
 
 @section('title')
-    Something | Panel | {{ config('app.name') }}
+    {{ ucfirst($user->fullName) }} | Show | Panel | {{ config('app.name') }}
 @endsection
 
 @section('css')
@@ -12,7 +12,7 @@
     <li id="users" class="tab-content opened">
         <section class="grid gap-4">
             <header class="content-title">
-                <h2>Users</h2>
+                <h2>User</h2>
             </header>
 
             <main class="content-form pb-4 mx-4">
@@ -48,7 +48,7 @@
 
 @section('js')
     <script>
-        const properties = @json($properties);
+        const user = {};
     </script>
 
     <script type="module" src="{{ asset('js/user/show.js') }}"></script>

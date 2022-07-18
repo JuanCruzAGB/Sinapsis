@@ -11,6 +11,7 @@
         public function up () {
             Schema::create('evaluations', function (Blueprint $table) {
                 $table->increments('id_evaluation');
+                $table->decimal('qualification', 9, 2)->nullable();
                 $table->unsignedInteger('id_user');
                 $table->unsignedInteger('id_exam');
                 $table->timestamp('deleted_at')->nullable();

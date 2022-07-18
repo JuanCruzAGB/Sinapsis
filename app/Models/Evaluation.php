@@ -19,6 +19,7 @@
         protected $fillable = [
             'id_exam',
             'id_user',
+            'qualification',
         ];
 
         /**
@@ -51,5 +52,35 @@
          */
         public function user () {
             return $this->belongsTo(User::class, 'id_user', 'id_user');
+        }
+
+        /**
+         * * Scope a query to only include Evaluations where qualification is null.
+         * @param \Illuminate\Database\Eloquent\Builder $query
+         * @return \Illuminate\Database\Eloquent\Builder
+         */
+        public function scopeNotQualified ($query) {
+            return $query->whereNull('qualification');
+        }
+
+        /**
+         * * Scope a query to only include Evaluations where qualification is not null.
+         * @param \Illuminate\Database\Eloquent\Builder $query
+         * @return \Illuminate\Database\Eloquent\Builder
+         */
+        public function scopeQualified ($query) {
+            return $query->whereNotNull('qualification');
+        }
+
+        /**
+         * * Scope a query to only include Evaluations where qualification is not null.
+         * @param \Illuminate\Database\Eloquent\Builder $query
+         * @param int $id_user
+         * @return \Illuminate\Database\Eloquent\Builder
+         */
+        public function scopeCreatedBy ($query, int $id_user) {
+            return $query->join('exams', 'exams.id_exam', '=', 'evaluations.id_exam')
+                ->select('evaluations.*')
+                ->where('exams.id_created_by', $id_user);
         }
     }

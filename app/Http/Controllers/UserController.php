@@ -1,6 +1,7 @@
 <?php
     namespace App\Http\Controllers;
 
+    use Auth;
     use Illuminate\Http\Request;
 
     class UserController extends Controller {
@@ -15,7 +16,7 @@
          * @return void
          */
         public function __construct () {
-            // $this->middleware('auth');
+            $this->middleware([ 'auth', ]);
         }
 
         /**
@@ -25,9 +26,22 @@
          * @return \Illuminate\Http\Response
          */
         public function index (Request $request, string $role) {
-            $users = $this->model::byRole($role)->get();
+            if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) === false) abort(404);
+
+            if (!isset(Auth::user()->role->actions['read']) || !in_array($role, Auth::user()->role->actions['read'])) abort(403, 'You can not access here');
+
+            switch (Auth::user()->id_role) {
+                case 1:
+                    $users = $this->model::byRole($role)->createdBy(Auth::user()->id_user)->get();
+                    break;
+
+                case 3:
+                    $users = $this->model::byRole($role)->get();
+                    break;
+            }
 
             return view('user.list', [
+                'role' => $role,
                 'users' => $users,
             ]);
         }
@@ -35,12 +49,17 @@
         /**
          * * Display the specified resource.
          * @param \Illuminate\Http\Request $request
-         * @param string $role
          * @param string $slug
          * @return \Illuminate\Http\Response
          */
         public function details (Request $request, string $slug) {
+            if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) === false) abort(404);
+
             $user = $this->model::bySlug($slug);
+
+            if (!isset(Auth::user()->role->actions['update']) || !in_array('profile', Auth::user()->role->actions['update']) || (Auth::user()->id_role == 1 && Auth::user()->slug != $slug)) {
+                abort(403, 'You can not access here');
+            }
 
             return view('user.details', [
                 'user' => $user,
@@ -54,6 +73,12 @@
          * @return \Illuminate\Http\Response
          */
         public function create (Request $request, string $role) {
+            if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) === false) abort(404);
+
+            if (!isset(Auth::user()->role->actions['create']) || !in_array($role, Auth::user()->role->actions['create'])) {
+                abort(403, 'You can not access here');
+            }
+
             return view('user.create', [
                 'role' => $role,
             ]);
@@ -66,6 +91,14 @@
          * @return \Illuminate\Http\Response
          */
         public function store (Request $request, string $role) {
+            if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) === false) abort(404);
+
+            if (!isset(Auth::user()->role->actions['create']) || !in_array($role, Auth::user()->role->actions['create'])) {
+                abort(403, 'You can not access here');
+            }
+
+            ddd($request);
+
             return redirect()->route('user.details');
         }
 
@@ -77,7 +110,13 @@
          * @return \Illuminate\Http\Response
          */
         public function show (Request $request, string $role, string $slug) {
+            if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) === false) abort(404);
+
             $user = $this->model::bySlug($slug);
+
+            if (!isset(Auth::user()->role->actions['update']) || !in_array($role, Auth::user()->role->actions['update']) || (Auth::user()->id_role == 1 && Auth::user()->id_user != $user->id_created_by)) {
+                abort(403, 'You can not access here');
+            }
 
             return view('user.show', [
                 'user' => $user,
@@ -92,6 +131,16 @@
          * @return \Illuminate\Http\Response
          */
         public function update (Request $request, string $role, string $slug) {
+            if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) === false) abort(404);
+
+            $user = $this->model::bySlug($slug);
+
+            if (!isset(Auth::user()->role->actions['update']) || !in_array($role, Auth::user()->role->actions['update']) || (Auth::user()->id_role == 1 && Auth::user()->id_user != $user->id_created_by)) {
+                abort(403, 'You can not access here');
+            }
+
+            ddd($request);
+
             return redirect()->route('user.details');
         }
 
@@ -103,6 +152,14 @@
          * @return \Illuminate\Http\Response
          */
         public function destroy (Request $request, string $role, string $slug) {
+            if ($role == 'administrator' && array_search(Auth::user()->id_user, [ 1, 2, ]) === false) abort(404);
+
+            if (!isset(Auth::user()->role->actions['delete']) || !in_array($slug, Auth::user()->role->actions['delete'])) {
+                abort(403, 'You can not access here');
+            }
+
+            ddd($request);
+
             return redirect()->route('user.list');
         }
     }

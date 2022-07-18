@@ -1,0 +1,129 @@
+.btn {
+    display: inline-block;
+    width: 10rem;
+    margin: 0;
+    background-origin: border-box;
+    background-position-x: 100%;
+    background-size: 200%;
+    border: 2px solid;
+    border-radius: .25rem;
+    color: inherit;
+    font: inherit;
+    font-family: var(--font) !important;
+    font-size: .8rem;
+    font-style: normal;
+    font-weight: 100;
+    line-height: 41px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    vertical-align: middle;
+    box-sizing: border-box;
+    overflow: hidden;
+    transition: .17s ease-in-out;
+    transition-property: color, background-color, background-position, border-color, box-shadow;
+}
+
+.btn.btn-small {
+    padding: 0 .5rem;
+}
+
+.btn.btn-borderless {
+    border: none;
+}
+
+.btn.btn-transparent {
+    position: relative;
+    background-color: transparent;
+    color: var(--color);
+    border-color: var(--bg-color);
+    isolation: isolate;
+}
+
+.btn.btn-transparent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 100%;
+    background-color: var(--bg-color);
+    transition: .17s ease-in-out;
+    transition-property: width;
+    z-index: -1;
+}
+
+.btn.btn-transparent.active,
+.btn.btn-transparent:focus,
+.btn.btn-transparent:hover {
+    color: var(--color-black);
+    border-color: var(--bg-color);
+}
+
+.btn.btn-transparent.active::before,
+.btn.btn-transparent:focus::before,
+.btn.btn-transparent:hover::before {
+    width: 100%;
+}
+
+.btn.btn-icon {
+    padding: .5rem;
+    border-color: transparent;
+    font-size: 1.5rem;
+    line-height: normal;
+}
+
+.btn.btn-black {
+    --bg-color: var(--color-black);
+    --color: var(--color-black);
+}
+
+.btn.btn-blue {
+    --bg-color: var(--color-blue);
+    --color: var(--color-blue);
+}
+
+.btn.btn-cyan {
+    --bg-color: var(--color-cyan);
+    --color: var(--color-cyan);
+}
+
+.btn.btn-dark {
+    --bg-color: var(--color-dark);
+    --color: var(--color-dark);
+}
+
+.btn.btn-green {
+    --bg-color: var(--color-green);
+    --color: var(--color-green);
+}
+
+.btn.btn-grey {
+    --bg-color: var(--color-grey);
+    --color: var(--color-grey);
+}
+
+.btn.btn-light-grey {
+    --bg-color: var(--color-grey);
+    --color: var(--color-grey);
+}
+
+.btn.btn-purple {
+    --bg-color: var(--color-purple);
+    --color: var(--color-purple);
+}
+
+.btn.btn-red {
+    --bg-color: var(--color-red);
+    --color: var(--color-red);
+}
+
+.btn.btn-yellow {
+    --bg-color: var(--color-yellow);
+    --color: var(--color-yellow);
+}
+
+.btn.btn-white {
+    --bg-color: var(--color-white);
+    --color: var(--color-white);
+}
