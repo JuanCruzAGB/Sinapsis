@@ -9,12 +9,14 @@
 @endsection
 
 @section('body')
-    <h1>Administradores</h1>
-    <ul>
-        <li><a href="/users/administrator/list">Lista</a></li>
-        <li><a href="/users/administrator/create">Crear</a></li>
-        <li><a href="/users/administrator/{{ \App\Models\User::administrators()->get()->random()->slug }}/show">Ver / Editar</a></li>
-    </ul>
+    @if (array_search(Auth::user()->id_user, [ 1, 2, ]) !== false)
+        <h1>Administradores</h1>
+        <ul>
+            <li><a href="/users/administrator/list">Lista</a></li>
+            <li><a href="/users/administrator/create">Crear</a></li>
+            <li><a href="/users/administrator/{{ \App\Models\User::administrators()->get()->random()->slug }}/show">Ver / Editar</a></li>
+        </ul>
+    @endif
     <h1>Correctores</h1>
     <ul>
         <li><a href="/users/corrector/list">Lista</a></li>
