@@ -1,0 +1,10 @@
+:root{
+    --font-one: 'Nunito', sans-serif;
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200&display=swap');
+
+.font-one{
+    font-family: var(--font-one);
+}

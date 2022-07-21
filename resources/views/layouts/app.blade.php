@@ -11,7 +11,7 @@
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
 
         {{-- App CSS --}}
-        <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+        <link href="{{ asset('css/app.css?v1') }}" rel="stylesheet">
 
         {{-- Global layout CSS --}}
         <link href="{{ asset('css/styles.css') }}" rel="stylesheet">

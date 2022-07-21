@@ -1,4 +1,19 @@
+form section input, select{
+    box-shadow: 0 0.5rem 1rem rgba(53, 99, 159, 0.18);
+}
 
+form section select{
+    color: rgb(138, 142, 155);
+}
+
+/* form section button[type=submit]{
+    background-color: rgb(7 89 133);
+    color: #fff;
+    width: 5rem;
+    padding: .25rem;
+    border-radius: .25rem;
+    justify-content: center;
+} */
 
 /* ? MD */
 @media (min-width: 768px) {

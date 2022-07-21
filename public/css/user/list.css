@@ -1,4 +1,45 @@
+/* TABLA */
+.table-wrapper{
+    max-width: auto;
+    overflow-x: scroll;
+}
 
+.table{
+    width: 100%;
+    margin-bottom: 1rem;
+    color: #212529;
+}
+
+.table th, .table td {
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+}
+
+tr.active, tr:hover {
+    position: relative;
+    background-color: #d6d6d6;
+}
+
+tr {
+    cursor: pointer;
+    transition: 500ms;
+}
+
+/* PAGINACION */
+
+.filter-pagination ul, .filter-pagination-candidates ul {
+    display: flex;
+    justify-content: center;
+}
+
+.filter-pagination .active a:not([href]), .filter-pagination a:hover, .filter-pagination-candidates .active a:not([href]), .filter-pagination-candidates a:hover {
+    background-position-x: 0;
+    background-color: transparent;
+    color: rgba(250,250,250,.95);
+    border-color: var(--color-one);
+    background-image: linear-gradient(90deg,var(--color-one) 50%,transparent 50%);
+}
 
 /* ? MD */
 @media (min-width: 768px) {
