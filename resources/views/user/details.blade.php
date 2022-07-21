@@ -25,7 +25,7 @@
                         <section class="input-group grid lg:col-span-2 gap-4">
                             <label for="property-name" class="input-name Work-Sans">Nombre:</label>
 
-                            <input class="form-input input-field" type="text" name="name" id="property-name" placeholder="Example" value="{{ old('name') }}">
+                            <input class="form-input state input-field" type="text" name="name" id="property-name" placeholder="Example" value="{{ old('name') }}">
                             
                             <span class="Work-Sans support support-box support-name {{ !$errors->has("name") ? "hidden" : "visible" }}">
                                 @if($errors->has("name"))

@@ -94,7 +94,7 @@
 
 
                             <section class="input-group grid lg:col-span-2 gap-4 flex">
-                                <button type="submit" class="form-submit mt-5 items-center">
+                                <button type="submit" class="form-submit mt-5 items-center bg-red-400">
                                     <span>Confirm</span>
                                 </button>
                             </section>

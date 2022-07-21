@@ -6,14 +6,14 @@ form section select{
     color: rgb(138, 142, 155);
 }
 
-form section button[type=submit]{
+/* form section button[type=submit]{
     background-color: rgb(7 89 133);
     color: #fff;
     width: 5rem;
     padding: .25rem;
     border-radius: .25rem;
     justify-content: center;
-}
+} */
 
 /* ? MD */
 @media (min-width: 768px) {
