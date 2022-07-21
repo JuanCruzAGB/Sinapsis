@@ -18,14 +18,14 @@
             <main class="content-form pb-4 mx-4">
                 {{-- <input type="checkbox" name="state" id="state"> --}}
                 <button class="btn-edit-form">Editar</button>
-                <button class="btn-cancel-form">cancelar</button>
+                <button class="btn-cancel-form hidden">cancelar</button>
                 <form action="/users/show" method="post" enctype="multipart/form-data">
                     @csrf
 
                     @method('POST')
 
                     <main class="grid lg:grid-cols-2 gap-4">
-                        {{-- @if ($role == "associated") --}}
+                        @if ($role == "associated")
                             <section class="input-group grid lg:col-span-2 gap-4">
                               <label for="name" class="input-name block text-gray-700 text-sm mb-0">
                                 Name
@@ -97,7 +97,7 @@
 
 
                             <section class="input-group grid lg:col-span-2 gap-4 flex">
-                                <button type="submit" class="form-submit mt-5 items-center bg-red-400">
+                                <button type="submit" class="form-submit mt-5 items-center bg-blue-300 text-white">
                                     <span>Confirm</span>
                                 </button>
                             </section>
@@ -113,7 +113,7 @@
                                 @endif
                             </span> --}}
                         </section>
-                        {{-- @endif                         --}}
+                        @endif                        
                     </main>
                 </form>
             </main>

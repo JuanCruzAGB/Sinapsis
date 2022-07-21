@@ -113,6 +113,7 @@
 
             return view('user.show', [
                 'user' => $user,
+                'role' => $role
             ]);
         }
 
